@@ -83,21 +83,22 @@ function loadPlayerProfile(playerId) {
     .withSuccessHandler(function(result) {
       if (result && result.success) {
         currentPlayerData = result.data;
-        renderPlayerDetail(result.data);
+        renderPlayerProfileCard(result.data);
+        renderPersonalBests(result.data);
       } else {
-        document.getElementById('playerDetail').innerHTML =
+        document.getElementById('playerProfileCard').innerHTML =
           '<div class="empty-state"><p>選手情報の取得に失敗しました</p></div>';
       }
     })
     .withFailureHandler(function(error) {
       showToast('エラーが発生しました: ' + error.message, 'error');
-      document.getElementById('playerDetail').innerHTML =
+      document.getElementById('playerProfileCard').innerHTML =
         '<div class="empty-state"><p>通信エラーが発生しました</p></div>';
     })
     .getPlayerDetail(playerId);
 
   // 記録を読み込み
-  loadPlayerRecords(playerId);
+  loadPlayerRecordsForProfile(playerId);
 }
 
 function updateFilters(players) {
@@ -135,7 +136,7 @@ function filterPlayers() {
 }
 
 // ===========================================
-// 選手詳細
+// 選手詳細（旧スタイル - 互換用）
 // ===========================================
 function selectPlayer(playerId) {
   currentPlayerId = playerId;
@@ -147,7 +148,8 @@ function selectPlayer(playerId) {
 
   // 詳細を読み込み
   showLoading('playerDetail');
-  document.getElementById('addRecordBtn').style.display = 'inline-flex';
+  const addRecordBtn = document.getElementById('addRecordBtn');
+  if (addRecordBtn) addRecordBtn.style.display = 'inline-flex';
 
   google.script.run
     .withSuccessHandler(function(result) {
@@ -164,8 +166,202 @@ function selectPlayer(playerId) {
     .getPlayerDetail(playerId);
 }
 
+// ===========================================
+// プロフィールカード（モダンデザイン）
+// ===========================================
+function renderPlayerProfileCard(player) {
+  const container = document.getElementById('playerProfileCard');
+
+  const adminButtons = APP_MODE === 'admin' ? `
+    <button class="btn btn-outline btn-sm" onclick="showEditPlayerModal('${player.id}')">編集</button>
+    <button class="btn btn-danger btn-sm" onclick="confirmDeletePlayer('${player.id}')">削除</button>
+  ` : `
+    <button class="btn btn-outline btn-sm" onclick="showProfileModal('${player.id}')">目標編集</button>
+  `;
+
+  container.innerHTML = `
+    <div class="profile-header-section">
+      <div class="profile-photo">👤</div>
+      <div class="profile-main-info">
+        <div class="profile-name">${player.name}</div>
+        <div class="profile-name-sub">${player.registration_number || ''}</div>
+        <div class="profile-tags">
+          ${player.category ? `<span class="profile-tag">${player.category}</span>` : ''}
+          ${player.affiliation ? `<span class="profile-tag primary">${player.affiliation}</span>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-divider"></div>
+
+    <div class="profile-info-grid">
+      <div class="profile-info-item">
+        <span class="profile-info-label">登録番号</span>
+        <span class="profile-info-value">${player.registration_number || '-'}</span>
+      </div>
+      <div class="profile-info-item">
+        <span class="profile-info-label">カテゴリ</span>
+        <span class="profile-info-value">${player.category || '-'}</span>
+      </div>
+      <div class="profile-info-item full-width">
+        <span class="profile-info-label">所属</span>
+        <span class="profile-info-value">${player.affiliation || '-'}</span>
+      </div>
+    </div>
+
+    <div class="profile-actions">
+      ${adminButtons}
+    </div>
+  `;
+
+  // コメントカードを表示
+  if (player.comment) {
+    document.getElementById('playerCommentCard').style.display = 'block';
+    document.getElementById('playerComment').textContent = player.comment;
+  } else {
+    document.getElementById('playerCommentCard').style.display = 'none';
+  }
+}
+
+function renderPersonalBests(player) {
+  const targets = [
+    { key: 'target_1500m', label: '1500m' },
+    { key: 'target_3000m', label: '3000m' },
+    { key: 'target_5000m', label: '5000m' },
+    { key: 'target_10000m', label: '10000m' },
+    { key: 'target_half', label: 'ハーフ' },
+    { key: 'target_full', label: 'フル' }
+  ];
+
+  const hasTargets = targets.some(t => player[t.key]);
+
+  if (!hasTargets) {
+    document.getElementById('personalBestsCard').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('personalBestsCard').style.display = 'block';
+
+  const pbItems = targets
+    .filter(t => player[t.key])
+    .map(t => {
+      const targetTime = player[t.key];
+      const bestRecord = player.bestRecords ? player.bestRecords[t.label] : null;
+
+      return `
+        <div class="pb-item">
+          <div class="pb-event">${t.label}</div>
+          <div class="pb-time">${targetTime}</div>
+          ${bestRecord ? `<div class="pb-date">PB: ${bestRecord.time}</div>` : '<div class="pb-date">目標タイム</div>'}
+        </div>
+      `;
+    }).join('');
+
+  document.getElementById('personalBests').innerHTML = pbItems;
+}
+
+function loadPlayerRecordsForProfile(playerId) {
+  const container = document.getElementById('recordsTableContainer');
+  container.innerHTML = '<div class="loading">読み込み中...</div>';
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.success) {
+        renderRecordsTable(result.data);
+        renderCareerStats(result.data);
+      } else {
+        container.innerHTML = '<div class="empty-state"><p>記録の取得に失敗しました</p></div>';
+      }
+    })
+    .withFailureHandler(function(error) {
+      console.error('記録取得エラー:', error);
+      container.innerHTML = '<div class="empty-state"><p>通信エラー</p></div>';
+    })
+    .getPlayerRecords(playerId);
+}
+
+function renderRecordsTable(records) {
+  const container = document.getElementById('recordsTableContainer');
+
+  if (!records || records.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>記録がありません</p></div>';
+    return;
+  }
+
+  const tableRows = records.map(record => {
+    const dateStr = record.date ? formatDateStr(record.date) : '-';
+    const year = record.date ? new Date(record.date).getFullYear() : '-';
+
+    return `
+      <tr>
+        <td class="year-cell">${year}</td>
+        <td class="race-name">${record.race_name || '-'}</td>
+        <td class="section-cell">${record.section || '-'}</td>
+        <td class="time-cell">${record.time || '-'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <table class="records-table">
+      <thead>
+        <tr>
+          <th>年度</th>
+          <th>大会</th>
+          <th>種目</th>
+          <th>記録</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tableRows}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderCareerStats(records) {
+  const statsCard = document.getElementById('careerStatsCard');
+
+  if (!records || records.length === 0) {
+    statsCard.style.display = 'none';
+    return;
+  }
+
+  statsCard.style.display = 'block';
+
+  // 出場回数
+  const totalRaces = records.length;
+
+  // 種目別記録数（駅伝区間のみ）
+  const ekidenSections = ['1区', '2区', '3区', '4区', '5区', '6区'];
+  const ekidenCount = records.filter(r => ekidenSections.includes(r.section)).length;
+
+  // 最新記録の年
+  const years = records.map(r => r.date ? new Date(r.date).getFullYear() : 0).filter(y => y > 0);
+  const latestYear = years.length > 0 ? Math.max(...years) : '-';
+
+  document.getElementById('careerStats').innerHTML = `
+    <div class="stats-item">
+      <div class="stats-number">${totalRaces}<span class="unit">回</span></div>
+      <div class="stats-label">記録数</div>
+    </div>
+    <div class="stats-item">
+      <div class="stats-number">${ekidenCount}<span class="unit">回</span></div>
+      <div class="stats-label">駅伝出場</div>
+    </div>
+    <div class="stats-item">
+      <div class="stats-number">${latestYear}</div>
+      <div class="stats-label">最新記録</div>
+    </div>
+  `;
+}
+
+// ===========================================
+// 選手詳細（旧スタイル - 互換用）
+// ===========================================
 function renderPlayerDetail(player) {
   const container = document.getElementById('playerDetail');
+  if (!container) return;
 
   const targets = [
     { key: 'target_1500m', label: '1500m' },

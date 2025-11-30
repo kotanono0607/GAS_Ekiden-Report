@@ -34,27 +34,49 @@
       <a href="<?= baseUrl ?>?mode=<?= mode ?>" class="back-link" target="_top">← 選手一覧に戻る</a>
     </div>
 
-    <!-- 選手詳細 -->
-    <section class="profile-main">
-      <div id="playerDetail" class="player-detail">
+    <!-- 左カラム：プロフィール情報 -->
+    <div class="profile-left-column">
+      <!-- プロフィールカード -->
+      <div class="profile-card" id="playerProfileCard">
         <div class="loading">読み込み中...</div>
       </div>
-    </section>
 
-    <!-- 記録一覧 -->
-    <aside class="profile-records">
-      <div class="pane-header">
-        <h2>記録一覧</h2>
-        <? if (mode === 'admin' || mode === 'user') { ?>
-          <button class="btn btn-sm btn-primary" id="addRecordBtn" onclick="showAddRecordModal()">
-            記録追加
-          </button>
-        <? } ?>
+      <!-- コメント・意気込みカード -->
+      <div class="profile-card" id="playerCommentCard" style="display: none;">
+        <div class="profile-card-title">コメント</div>
+        <div class="message-text" id="playerComment"></div>
       </div>
-      <div class="record-list" id="recordList">
-        <div class="loading">読み込み中...</div>
+    </div>
+
+    <!-- 右カラム：記録情報 -->
+    <div class="profile-right-column">
+      <!-- 記録一覧カード -->
+      <div class="profile-card">
+        <div class="profile-card-title" style="justify-content: space-between;">
+          <span>記録一覧</span>
+          <? if (mode === 'admin' || mode === 'user') { ?>
+            <button class="btn btn-sm btn-primary" id="addRecordBtn" onclick="showAddRecordModal()">
+              記録追加
+            </button>
+          <? } ?>
+        </div>
+        <div id="recordsTableContainer">
+          <div class="loading">読み込み中...</div>
+        </div>
       </div>
-    </aside>
+
+      <!-- 自己ベストカード -->
+      <div class="profile-card" id="personalBestsCard" style="display: none;">
+        <div class="profile-card-title">自己ベスト（目標タイム）</div>
+        <div class="personal-bests" id="personalBests"></div>
+      </div>
+
+      <!-- 通算成績カード -->
+      <div class="profile-card" id="careerStatsCard" style="display: none;">
+        <div class="profile-card-title">通算成績</div>
+        <div class="stats-grid" id="careerStats"></div>
+      </div>
+    </div>
   </main>
 
   <? } else { ?>

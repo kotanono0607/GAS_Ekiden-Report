@@ -183,12 +183,12 @@ body {
 }
 
 /* ===========================================
-   Profile Page (プロフィールページ)
+   Profile Page (プロフィールページ) - Modern Design
    =========================================== */
 .profile-page {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 1rem;
+  grid-template-columns: 420px 1fr;
+  gap: 24px;
 }
 
 .back-nav {
@@ -198,16 +198,348 @@ body {
 .back-link {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   color: var(--primary-color);
   text-decoration: none;
+  font-size: 14px;
   font-weight: 500;
   padding: 0.5rem 0;
 }
 
 .back-link:hover {
-  text-decoration: underline;
+  color: var(--primary-dark);
 }
 
+/* 左カラム */
+.profile-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 右カラム */
+.profile-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* プロフィールカード共通 */
+.profile-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.profile-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* プロフィールヘッダー（写真＋名前） */
+.profile-header-section {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.profile-photo {
+  width: 120px;
+  height: 150px;
+  background: linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94A3B8;
+  font-size: 48px;
+  flex-shrink: 0;
+}
+
+.profile-main-info {
+  flex: 1;
+}
+
+.profile-name {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dark-color);
+  margin-bottom: 4px;
+}
+
+.profile-name-sub {
+  font-size: 13px;
+  color: #A0AEC0;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.profile-tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.profile-tag {
+  padding: 6px 14px;
+  background: #EDF2F7;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #4A5568;
+  font-weight: 500;
+}
+
+.profile-tag.primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* プロフィール区切り線 */
+.profile-divider {
+  height: 1px;
+  background: #E2E8F0;
+  margin: 20px 0;
+}
+
+/* プロフィール情報グリッド */
+.profile-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.profile-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.profile-info-label {
+  font-size: 11px;
+  color: #A0AEC0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-info-value {
+  font-size: 15px;
+  color: var(--dark-color);
+  font-weight: 500;
+}
+
+.profile-info-value.highlight {
+  color: var(--primary-color);
+}
+
+/* 身体情報 */
+.physical-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.stat-box {
+  flex: 1;
+  background: #F8FAFC;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #A0AEC0;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--dark-color);
+}
+
+.stat-unit {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* 意気込み・コメントカード */
+.message-text {
+  font-size: 15px;
+  color: #4A5568;
+  line-height: 1.8;
+  padding: 16px;
+  background: #F8FAFC;
+  border-radius: 8px;
+  border-left: 3px solid var(--primary-color);
+}
+
+/* 記録テーブル */
+.records-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.records-table thead {
+  background: #F8FAFC;
+}
+
+.records-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.records-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.records-table tbody tr {
+  transition: background 0.15s;
+}
+
+.records-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.records-table .year-cell {
+  font-weight: 600;
+  color: var(--dark-color);
+}
+
+.records-table .race-name {
+  font-weight: 500;
+}
+
+.records-table .section-cell {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.records-table .time-cell {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-weight: 600;
+}
+
+/* 自己ベストカード */
+.personal-bests {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.pb-item {
+  background: #F8FAFC;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.pb-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.pb-event {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.pb-time {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dark-color);
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+.pb-date {
+  font-size: 11px;
+  color: #A0AEC0;
+  margin-top: 6px;
+}
+
+/* 通算成績カード */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stats-item {
+  text-align: center;
+  padding: 20px;
+  background: #F8FAFC;
+  border-radius: 10px;
+}
+
+.stats-number {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.stats-number .unit {
+  font-size: 16px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.stats-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* アクションボタンエリア */
+.profile-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* もっと見るボタン */
+.more-button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  color: var(--primary-color);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 16px;
+  text-align: center;
+}
+
+.more-button:hover {
+  background: #EDF2F7;
+  border-color: #CBD5E1;
+}
+
+/* 旧スタイル互換 */
 .profile-main {
   background: var(--card-bg);
   border-radius: var(--radius);
@@ -773,9 +1105,20 @@ form h4 {
 /* ===========================================
    Responsive Design
    =========================================== */
+@media (max-width: 1200px) {
+  .profile-page {
+    grid-template-columns: 380px 1fr;
+  }
+}
+
 @media (max-width: 992px) {
   .profile-page {
     grid-template-columns: 1fr;
+  }
+
+  .profile-left-column,
+  .profile-right-column {
+    width: 100%;
   }
 
   .profile-records {
@@ -784,6 +1127,10 @@ form h4 {
 
   .record-list {
     max-height: 300px;
+  }
+
+  .personal-bests {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -824,6 +1171,24 @@ form h4 {
   .player-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
+
+  .profile-header-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .profile-tags {
+    justify-content: center;
+  }
+
+  .personal-bests {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -845,6 +1210,24 @@ form h4 {
 
   .player-grid {
     grid-template-columns: 1fr;
+  }
+
+  .personal-bests {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .physical-stats {
+    flex-direction: column;
+  }
+
+  .records-table th,
+  .records-table td {
+    padding: 10px 12px;
+    font-size: 13px;
   }
 }
 </style>
