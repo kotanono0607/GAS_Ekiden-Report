@@ -433,6 +433,43 @@ function debugTest3() {
   };
 }
 
+function debugTest4() {
+  // スプレッドシートアクセスのみテスト
+  try {
+    const ss = getSpreadsheet();
+    return { success: true, spreadsheetName: ss.getName() };
+  } catch (e) {
+    return { success: false, error: e.message, stack: e.stack };
+  }
+}
+
+function debugTest5() {
+  // スプレッドシートからデータ取得（Date変換あり）
+  try {
+    const ss = getSpreadsheet();
+    const sheet = ss.getSheetByName('Players');
+    if (!sheet) {
+      return { success: false, error: 'シートなし' };
+    }
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 2) {
+      return { success: true, data: [], message: 'データなし' };
+    }
+    // 最初の1行だけ取得
+    const row = sheet.getRange(3, 1, 1, 15).getValues()[0];
+    // Date型を文字列に変換
+    const safeRow = row.map(cell => {
+      if (cell instanceof Date) {
+        return cell.toISOString();
+      }
+      return cell;
+    });
+    return { success: true, firstRow: safeRow };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
 // ===========================================
 // データ取得API（共通）
 // ===========================================
