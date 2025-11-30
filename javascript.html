@@ -95,28 +95,22 @@ function navigateTo(url) {
   }
 }
 
-// 一覧ページを表示（iframe対応）
+// 一覧ページを表示（GAS API使用）
 function showListPage() {
-  // iframe内でも動作するよう、直接URLを変更
-  var url = BASE_URL + '?mode=' + APP_MODE;
-  try {
-    window.location.href = url;
-  } catch (e) {
-    // フォールバック
-    window.location.assign(url);
-  }
+  // GAS専用のhistory APIを使用（iframe内でも動作）
+  var params = { mode: APP_MODE };
+  google.script.history.push(null, params);
+  // ページを再読み込みして一覧を表示
+  window.location.reload();
 }
 
-// プロフィールページを表示（iframe対応）
+// プロフィールページを表示（GAS API使用）
 function showProfilePage(playerId) {
-  // iframe内でも動作するよう、直接URLを変更
-  var url = BASE_URL + '?pid=' + playerId + '&mode=' + APP_MODE;
-  try {
-    window.location.href = url;
-  } catch (e) {
-    // フォールバック
-    window.location.assign(url);
-  }
+  // GAS専用のhistory APIを使用（iframe内でも動作）
+  var params = { pid: playerId, mode: APP_MODE };
+  google.script.history.push(null, params);
+  // ページを再読み込みしてプロフィールを表示
+  window.location.reload();
 }
 
 // ===========================================
