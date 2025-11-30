@@ -587,7 +587,11 @@ function getPlayerDetail(playerId) {
   const row = data[rowIndex];
   const player = {};
   headers.forEach((header, index) => {
-    player[header] = row[index];
+    let value = row[index];
+    if (value instanceof Date) {
+      value = value.toISOString();
+    }
+    player[header] = value;
   });
 
   // 削除済みチェック
@@ -670,7 +674,11 @@ function getPlayerRecords(playerId, options = {}) {
     .map(row => {
       const record = {};
       headers.forEach((header, index) => {
-        record[header] = row[index];
+        let value = row[index];
+        if (value instanceof Date) {
+          value = value.toISOString();
+        }
+        record[header] = value;
       });
       return record;
     });
@@ -680,14 +688,10 @@ function getPlayerRecords(playerId, options = {}) {
   const order = options.order || 'desc';
 
   records.sort((a, b) => {
-    let valA = a[sortBy];
-    let valB = b[sortBy];
+    let valA = a[sortBy] || '';
+    let valB = b[sortBy] || '';
 
-    // 日付の場合
-    if (valA instanceof Date && valB instanceof Date) {
-      return order === 'desc' ? valB - valA : valA - valB;
-    }
-
+    // ISO文字列の日付は文字列比較でも正しくソートされる
     if (valA < valB) return order === 'asc' ? -1 : 1;
     if (valA > valB) return order === 'asc' ? 1 : -1;
     return 0;
@@ -772,7 +776,11 @@ function getTeamRecords(options = {}) {
   let records = data.map(row => {
     const record = {};
     headers.forEach((header, index) => {
-      record[header] = row[index];
+      let value = row[index];
+      if (value instanceof Date) {
+        value = value.toISOString();
+      }
+      record[header] = value;
     });
     return record;
   });
@@ -782,12 +790,8 @@ function getTeamRecords(options = {}) {
   const order = options.order || 'desc';
 
   records.sort((a, b) => {
-    let valA = a[sortBy];
-    let valB = b[sortBy];
-
-    if (valA instanceof Date && valB instanceof Date) {
-      return order === 'desc' ? valB - valA : valA - valB;
-    }
+    let valA = a[sortBy] || '';
+    let valB = b[sortBy] || '';
 
     if (valA < valB) return order === 'asc' ? -1 : 1;
     if (valA > valB) return order === 'asc' ? 1 : -1;
