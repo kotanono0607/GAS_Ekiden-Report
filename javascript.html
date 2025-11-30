@@ -85,13 +85,8 @@ function navigateToList() {
 
 // ページ遷移（iframe対応）
 function navigateTo(url) {
-  // iframe内でも動作するように複数の方法を試す
-  try {
-    window.top.location.href = url;
-  } catch (e) {
-    // クロスオリジンエラーの場合は現在のウィンドウで遷移
-    window.location.href = url;
-  }
+  // iframe内ではwindow.locationで遷移（クロスオリジンのためwindow.topは使用不可）
+  window.location.href = url;
 }
 
 // ===========================================
