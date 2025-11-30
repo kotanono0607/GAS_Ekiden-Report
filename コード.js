@@ -506,11 +506,16 @@ function getPlayers(options = {}) {
     const data = dataRange.getValues();
     console.log('[getPlayers] データ取得: ' + data.length + '行');
 
-    // オブジェクト配列に変換
+    // オブジェクト配列に変換（Date型は文字列に変換）
     let players = data.map(row => {
       const player = {};
       headers.forEach((header, index) => {
-        player[header] = row[index];
+        let value = row[index];
+        // Date型を文字列に変換（google.script.runでシリアライズ可能にする）
+        if (value instanceof Date) {
+          value = value.toISOString();
+        }
+        player[header] = value;
       });
       return player;
     });
