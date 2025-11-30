@@ -16,8 +16,8 @@
       <div class="header-actions">
         <? if (mode === 'admin') { ?>
           <button class="btn btn-primary" onclick="showAddPlayerModal()">選手追加</button>
-          <a href="?page=simulation&mode=admin" class="btn btn-secondary">シミュレーション</a>
-          <a href="?page=csv&mode=admin" class="btn btn-secondary">CSV登録</a>
+          <a href="<?= baseUrl ?>?page=simulation&mode=admin" target="_blank" class="btn btn-secondary">シミュレーション</a>
+          <a href="<?= baseUrl ?>?page=csv&mode=admin" target="_blank" class="btn btn-secondary">CSV登録</a>
           <span class="mode-badge admin">管理者</span>
         <? } ?>
       </div>
