@@ -68,7 +68,7 @@ function renderPlayerList(players) {
   }
 
   container.innerHTML = players.map(player => `
-    <a href="?id=${player.id}&mode=${APP_MODE}" class="player-card"
+    <a href="?pid=${player.id}&mode=${APP_MODE}" class="player-card"
        data-id="${player.id}"
        data-name="${player.name}"
        data-category="${player.category || ''}"
