@@ -10,16 +10,6 @@
   <?!= include('stylesheet'); ?>
 </head>
 <body>
-  <!-- デバッグ情報（問題解決後に削除） -->
-  <div id="debugInfo" style="background: yellow; padding: 10px; font-family: monospace; font-size: 12px;">
-    DEBUG: mode=<?= mode ?>, playerId=[<?= playerId ?>]
-  </div>
-
-  <!-- 常に表示されるテスト -->
-  <div style="background: orange; padding: 10px;">
-    このオレンジのボックスは常に表示されるはずです。これが見えない場合はテンプレート自体が失敗しています。
-  </div>
-
   <!-- ヘッダー -->
   <header class="header">
     <div class="header-content">
@@ -38,14 +28,33 @@
   </header>
 
   <? if (playerId) { ?>
-  <!-- プロフィールページ（シンプル版） -->
-  <main style="padding: 20px;">
-    <p style="background: lime; padding: 20px;">プロフィールページ表示テスト</p>
-    <p>playerId: <?= playerId ?></p>
-    <p>mode: <?= mode ?></p>
-    <p><a href="<?= baseUrl ?>?mode=<?= mode ?>" target="_top">← 戻る</a></p>
-    <div id="playerDetail">読み込み中...</div>
-    <div id="recordList">記録読み込み中...</div>
+  <!-- プロフィールページ -->
+  <main class="main-container profile-page">
+    <div class="back-nav">
+      <a href="<?= baseUrl ?>?mode=<?= mode ?>" class="back-link" target="_top">← 選手一覧に戻る</a>
+    </div>
+
+    <!-- 選手詳細 -->
+    <section class="profile-main">
+      <div id="playerDetail" class="player-detail">
+        <div class="loading">読み込み中...</div>
+      </div>
+    </section>
+
+    <!-- 記録一覧 -->
+    <aside class="profile-records">
+      <div class="pane-header">
+        <h2>記録一覧</h2>
+        <? if (mode === 'admin' || mode === 'user') { ?>
+          <button class="btn btn-sm btn-primary" id="addRecordBtn" onclick="showAddRecordModal()">
+            記録追加
+          </button>
+        <? } ?>
+      </div>
+      <div class="record-list" id="recordList">
+        <div class="loading">読み込み中...</div>
+      </div>
+    </aside>
   </main>
 
   <? } else { ?>
@@ -249,12 +258,6 @@
     let currentPlayerId = INITIAL_PLAYER_ID || null;
     let playersData = [];
     let recordChart = null;
-
-    // デバッグ用: ページ読み込み確認
-    console.log('[グローバル] スクリプト開始');
-    console.log('[グローバル] APP_MODE:', APP_MODE);
-    console.log('[グローバル] INITIAL_PLAYER_ID:', INITIAL_PLAYER_ID);
-    console.log('[グローバル] BASE_URL:', BASE_URL);
   </script>
   <?!= include('javascript'); ?>
 </body>
