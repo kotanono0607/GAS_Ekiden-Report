@@ -1289,3 +1289,355 @@ function doGet(e) {
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
+
+// ===========================================
+// テスト用ダミーデータ作成関数
+// ===========================================
+
+/**
+ * ダミーデータを一括作成
+ * 選手10名、各選手に記録5件、チーム記録3件を作成
+ *
+ * ※ GASエディタから手動で実行してください
+ */
+function createDummyData() {
+  Logger.log('=== ダミーデータ作成開始 ===');
+
+  // 選手データを作成
+  const playerIds = createDummyPlayers();
+  Logger.log(`選手 ${playerIds.length} 名を作成しました`);
+
+  // 各選手に記録を作成
+  let totalRecords = 0;
+  playerIds.forEach(playerId => {
+    const count = createDummyRecordsForPlayer(playerId);
+    totalRecords += count;
+  });
+  Logger.log(`記録 ${totalRecords} 件を作成しました`);
+
+  // チーム記録を作成
+  const teamRecordCount = createDummyTeamRecords();
+  Logger.log(`チーム記録 ${teamRecordCount} 件を作成しました`);
+
+  Logger.log('=== ダミーデータ作成完了 ===');
+
+  return {
+    players: playerIds.length,
+    records: totalRecords,
+    teamRecords: teamRecordCount
+  };
+}
+
+/**
+ * ダミー選手データを作成
+ * @returns {Array} 作成した選手IDの配列
+ */
+function createDummyPlayers() {
+  const dummyPlayers = [
+    {
+      registration_number: '001',
+      name: '山田 太郎',
+      affiliation: '東京高校',
+      category: '高校生',
+      target_1500m: '4:10',
+      target_3000m: '9:00',
+      target_5000m: '15:30',
+      target_10000m: '32:00',
+      target_half: '',
+      target_full: '',
+      comment: '今シーズンは5000mで自己ベスト更新を目指す'
+    },
+    {
+      registration_number: '002',
+      name: '佐藤 花子',
+      affiliation: '東京高校',
+      category: '高校生',
+      target_1500m: '4:40',
+      target_3000m: '9:50',
+      target_5000m: '17:00',
+      target_10000m: '35:00',
+      target_half: '',
+      target_full: '',
+      comment: '駅伝のエースを目指して練習中'
+    },
+    {
+      registration_number: '003',
+      name: '鈴木 一郎',
+      affiliation: '大阪大学',
+      category: '大学生',
+      target_1500m: '3:55',
+      target_3000m: '8:30',
+      target_5000m: '14:30',
+      target_10000m: '30:00',
+      target_half: '1:06:00',
+      target_full: '',
+      comment: '箱根駅伝出場を目標に'
+    },
+    {
+      registration_number: '004',
+      name: '田中 美咲',
+      affiliation: '大阪大学',
+      category: '大学生',
+      target_1500m: '4:25',
+      target_3000m: '9:20',
+      target_5000m: '16:00',
+      target_10000m: '33:30',
+      target_half: '1:15:00',
+      target_full: '',
+      comment: '全日本大学女子駅伝を目指す'
+    },
+    {
+      registration_number: '005',
+      name: '高橋 健太',
+      affiliation: '市民ランナーズ',
+      category: '一般',
+      target_1500m: '4:30',
+      target_3000m: '9:40',
+      target_5000m: '16:30',
+      target_10000m: '34:00',
+      target_half: '1:18:00',
+      target_full: '2:50:00',
+      comment: 'サブスリー達成が目標'
+    },
+    {
+      registration_number: '006',
+      name: '伊藤 さくら',
+      affiliation: '市民ランナーズ',
+      category: '一般',
+      target_1500m: '5:00',
+      target_3000m: '10:30',
+      target_5000m: '18:00',
+      target_10000m: '37:00',
+      target_half: '1:25:00',
+      target_full: '3:10:00',
+      comment: '楽しく走ることが一番！'
+    },
+    {
+      registration_number: '007',
+      name: '渡辺 隼人',
+      affiliation: '福岡高校',
+      category: '高校生',
+      target_1500m: '4:05',
+      target_3000m: '8:45',
+      target_5000m: '15:00',
+      target_10000m: '31:00',
+      target_half: '',
+      target_full: '',
+      comment: 'インターハイ入賞を目指す'
+    },
+    {
+      registration_number: '008',
+      name: '中村 愛',
+      affiliation: '福岡高校',
+      category: '高校生',
+      target_1500m: '4:35',
+      target_3000m: '9:40',
+      target_5000m: '16:45',
+      target_10000m: '34:30',
+      target_half: '',
+      target_full: '',
+      comment: '3000mで県記録を狙う'
+    },
+    {
+      registration_number: '009',
+      name: '小林 大輔',
+      affiliation: 'マスターズクラブ',
+      category: '40代',
+      target_1500m: '4:50',
+      target_3000m: '10:20',
+      target_5000m: '17:30',
+      target_10000m: '36:00',
+      target_half: '1:22:00',
+      target_full: '3:00:00',
+      comment: '年齢に負けず記録更新中'
+    },
+    {
+      registration_number: '010',
+      name: '加藤 恵',
+      affiliation: 'マスターズクラブ',
+      category: '30代',
+      target_1500m: '5:10',
+      target_3000m: '10:50',
+      target_5000m: '18:30',
+      target_10000m: '38:00',
+      target_half: '1:28:00',
+      target_full: '3:15:00',
+      comment: '子育てしながらマラソン挑戦'
+    }
+  ];
+
+  const playerIds = [];
+
+  dummyPlayers.forEach(playerData => {
+    const result = addPlayer(playerData);
+    if (result.success) {
+      playerIds.push(result.data.id);
+    } else {
+      Logger.log(`選手追加エラー: ${playerData.name} - ${result.error}`);
+    }
+  });
+
+  return playerIds;
+}
+
+/**
+ * 特定選手のダミー記録を作成
+ * @param {string} playerId - 選手ID
+ * @returns {number} 作成した記録数
+ */
+function createDummyRecordsForPlayer(playerId) {
+  const sections = ['1500m', '3000m', '5000m', '10000m'];
+  const races = [
+    '春季記録会',
+    '県選手権',
+    '地区予選',
+    '秋季記録会',
+    '冬季ロードレース'
+  ];
+
+  let count = 0;
+  const baseDate = new Date();
+  baseDate.setMonth(baseDate.getMonth() - 6); // 6ヶ月前から
+
+  // 各種目で1-2件の記録を作成
+  sections.forEach((section, sectionIndex) => {
+    const numRecords = Math.floor(Math.random() * 2) + 1; // 1-2件
+
+    for (let i = 0; i < numRecords; i++) {
+      const recordDate = new Date(baseDate);
+      recordDate.setDate(recordDate.getDate() + (sectionIndex * 30) + (i * 45)); // 日付をずらす
+
+      // タイムを生成（種目に応じて）
+      const time = generateRandomTime(section);
+
+      const result = addPersonalRecord({
+        player_id: playerId,
+        race_name: races[Math.floor(Math.random() * races.length)],
+        date: recordDate.toISOString().split('T')[0],
+        section: section,
+        time: time,
+        memo: i === 0 ? '自己ベスト更新！' : ''
+      });
+
+      if (result.success) {
+        count++;
+      }
+    }
+  });
+
+  return count;
+}
+
+/**
+ * 種目に応じたランダムタイムを生成
+ * @param {string} section - 種目
+ * @returns {string} タイム文字列
+ */
+function generateRandomTime(section) {
+  let baseSec, variance;
+
+  switch (section) {
+    case '1500m':
+      baseSec = 270; // 4:30
+      variance = 40;
+      break;
+    case '3000m':
+      baseSec = 570; // 9:30
+      variance = 60;
+      break;
+    case '5000m':
+      baseSec = 990; // 16:30
+      variance = 120;
+      break;
+    case '10000m':
+      baseSec = 2040; // 34:00
+      variance = 180;
+      break;
+    case 'ハーフ':
+      baseSec = 4800; // 1:20:00
+      variance = 600;
+      break;
+    case 'フル':
+      baseSec = 10800; // 3:00:00
+      variance = 1200;
+      break;
+    default:
+      baseSec = 600;
+      variance = 60;
+  }
+
+  const randomSec = baseSec + Math.floor(Math.random() * variance * 2) - variance;
+  return secondsToTime(randomSec);
+}
+
+/**
+ * ダミーチーム記録を作成
+ * @returns {number} 作成した記録数
+ */
+function createDummyTeamRecords() {
+  const dummyTeamRecords = [
+    {
+      race_name: '第50回 県縦断駅伝',
+      date: '2024-11-15',
+      total_time: '5:23:45',
+      rank: 3,
+      memo: '前年より5分短縮！'
+    },
+    {
+      race_name: '第25回 市民駅伝大会',
+      date: '2024-02-11',
+      total_time: '2:45:30',
+      rank: 1,
+      memo: '優勝！全員が自己ベスト'
+    },
+    {
+      race_name: '第49回 県縦断駅伝',
+      date: '2023-11-16',
+      total_time: '5:28:50',
+      rank: 5,
+      memo: '来年こそトップ3へ'
+    }
+  ];
+
+  let count = 0;
+
+  dummyTeamRecords.forEach(recordData => {
+    const result = addTeamRecord(recordData);
+    if (result.success) {
+      count++;
+    }
+  });
+
+  return count;
+}
+
+/**
+ * 全ダミーデータを削除
+ * ※ 注意: 全データが削除されます
+ */
+function clearDummyData() {
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.alert(
+    '警告',
+    '全てのデータを削除しますか？\nこの操作は取り消せません。',
+    ui.ButtonSet.YES_NO
+  );
+
+  if (response !== ui.Button.YES) {
+    Logger.log('操作がキャンセルされました');
+    return;
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 各シートのデータを削除（ヘッダーは残す）
+  ['Players', 'Records', 'TeamRecords', 'Simulations'].forEach(sheetName => {
+    const sheet = ss.getSheetByName(sheetName);
+    if (sheet && sheet.getLastRow() > 2) {
+      sheet.deleteRows(3, sheet.getLastRow() - 2);
+      Logger.log(`${sheetName}: データをクリアしました`);
+    }
+  });
+
+  Logger.log('全データを削除しました');
+}
