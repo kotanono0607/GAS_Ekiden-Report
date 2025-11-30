@@ -13,14 +13,7 @@
   <!-- ヘッダー -->
   <header class="header">
     <div class="header-content">
-      <h1 class="header-title">縦断駅伝選手名簿 <small style="font-size:0.5em;color:#888;">v1.6</small></h1>
-      <div style="margin-left:20px;">
-        <button onclick="runDebugTest('debugTest1')" style="font-size:10px;">Test1</button>
-        <button onclick="runDebugTest('debugTest2')" style="font-size:10px;">Test2</button>
-        <button onclick="runDebugTest('debugTest3')" style="font-size:10px;">Test3</button>
-        <button onclick="runDebugTest('debugTest4')" style="font-size:10px;">Test4:SS</button>
-        <button onclick="runDebugTest('debugTest5')" style="font-size:10px;">Test5:Data</button>
-      </div>
+      <h1 class="header-title">縦断駅伝選手名簿</h1>
       <div class="header-actions">
         <? if (mode === 'admin') { ?>
           <button class="btn btn-primary" onclick="showAddPlayerModal()">選手追加</button>
@@ -34,55 +27,58 @@
     </div>
   </header>
 
-  <!-- メインコンテンツ（3カラム） -->
-  <main class="main-container">
-    <!-- 左ペイン: 選手一覧 -->
-    <aside class="left-pane">
-      <div class="pane-header">
-        <h2>選手一覧</h2>
-        <div class="search-box">
-          <input type="text" id="searchInput" placeholder="検索..." onkeyup="filterPlayers()">
-        </div>
-        <div class="filter-options">
-          <select id="categoryFilter" onchange="filterPlayers()">
-            <option value="">全カテゴリ</option>
-          </select>
-          <select id="affiliationFilter" onchange="filterPlayers()">
-            <option value="">全所属</option>
-          </select>
-        </div>
-      </div>
-      <div class="player-list" id="playerList">
-        <div class="loading">読み込み中...</div>
-      </div>
-    </aside>
+  <? if (playerId) { ?>
+  <!-- プロフィールページ -->
+  <main class="main-container profile-page">
+    <div class="back-nav">
+      <a href="?mode=<?= mode ?>" class="back-link">← 選手一覧に戻る</a>
+    </div>
 
-    <!-- 中央ペイン: 選手詳細 -->
-    <section class="center-pane">
+    <!-- 選手詳細 -->
+    <section class="profile-main">
       <div id="playerDetail" class="player-detail">
-        <div class="empty-state">
-          <p>左の一覧から選手を選択してください</p>
-        </div>
+        <div class="loading">読み込み中...</div>
       </div>
     </section>
 
-    <!-- 右ペイン: 記録一覧 -->
-    <aside class="right-pane">
+    <!-- 記録一覧 -->
+    <aside class="profile-records">
       <div class="pane-header">
         <h2>記録一覧</h2>
         <? if (mode === 'admin' || mode === 'user') { ?>
-          <button class="btn btn-sm btn-primary" id="addRecordBtn" onclick="showAddRecordModal()" style="display:none;">
+          <button class="btn btn-sm btn-primary" id="addRecordBtn" onclick="showAddRecordModal()">
             記録追加
           </button>
         <? } ?>
       </div>
       <div class="record-list" id="recordList">
-        <div class="empty-state">
-          <p>選手を選択すると記録が表示されます</p>
-        </div>
+        <div class="loading">読み込み中...</div>
       </div>
     </aside>
   </main>
+
+  <? } else { ?>
+  <!-- 選手一覧ページ -->
+  <main class="main-container list-page">
+    <div class="list-header">
+      <h2>選手一覧</h2>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="検索..." onkeyup="filterPlayers()">
+      </div>
+      <div class="filter-options">
+        <select id="categoryFilter" onchange="filterPlayers()">
+          <option value="">全カテゴリ</option>
+        </select>
+        <select id="affiliationFilter" onchange="filterPlayers()">
+          <option value="">全所属</option>
+        </select>
+      </div>
+    </div>
+    <div class="player-grid" id="playerList">
+      <div class="loading">読み込み中...</div>
+    </div>
+  </main>
+  <? } ?>
 
   <!-- モーダル: 選手追加/編集 -->
   <div class="modal" id="playerModal">
@@ -258,7 +254,7 @@
     // グローバル変数
     const APP_MODE = '<?= mode ?>';
     const INITIAL_PLAYER_ID = '<?= playerId ?>';
-    let currentPlayerId = null;
+    let currentPlayerId = INITIAL_PLAYER_ID || null;
     let playersData = [];
     let recordChart = null;
   </script>
