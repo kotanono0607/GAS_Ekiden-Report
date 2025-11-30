@@ -319,18 +319,30 @@ function getCurrentDateTime() {
  * @returns {Spreadsheet} スプレッドシートオブジェクト
  */
 function getSpreadsheet() {
+  console.log('[getSpreadsheet] 開始');
+
   // Webアプリの場合はgetActiveSpreadsheetがnullを返すため、IDで開く
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     if (ss) {
+      console.log('[getSpreadsheet] getActiveSpreadsheet成功');
       return ss;
     }
+    console.log('[getSpreadsheet] getActiveSpreadsheetはnull');
   } catch (e) {
-    // getActiveSpreadsheetが失敗した場合
+    console.log('[getSpreadsheet] getActiveSpreadsheet失敗: ' + e.message);
   }
 
   // IDで開く
-  return SpreadsheetApp.openById(SPREADSHEET_ID);
+  try {
+    console.log('[getSpreadsheet] openByIdを試行: ' + SPREADSHEET_ID);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    console.log('[getSpreadsheet] openById成功');
+    return ss;
+  } catch (e) {
+    console.error('[getSpreadsheet] openById失敗: ' + e.message);
+    throw new Error('スプレッドシートを開けません: ' + e.message);
+  }
 }
 
 // ===========================================
@@ -353,6 +365,43 @@ function testConnection() {
   return message;
 }
 
+/**
+ * Webアプリからの接続テスト用関数
+ * ブラウザのコンソールから google.script.run.testWebConnection() で呼び出し可能
+ */
+function testWebConnection() {
+  console.log('[testWebConnection] 開始');
+
+  try {
+    // スプレッドシート取得テスト
+    const ss = getSpreadsheet();
+    console.log('[testWebConnection] スプレッドシート名: ' + ss.getName());
+
+    // Playersシート取得テスト
+    const sheet = ss.getSheetByName('Players');
+    if (sheet) {
+      const lastRow = sheet.getLastRow();
+      console.log('[testWebConnection] Playersシート lastRow: ' + lastRow);
+    } else {
+      console.log('[testWebConnection] Playersシートが見つかりません');
+    }
+
+    return {
+      success: true,
+      message: 'テスト成功',
+      spreadsheetName: ss.getName(),
+      playersSheetExists: !!sheet
+    };
+  } catch (e) {
+    console.error('[testWebConnection] エラー: ' + e.message);
+    return {
+      success: false,
+      error: e.message,
+      stack: e.stack
+    };
+  }
+}
+
 // ===========================================
 // データ取得API（共通）
 // ===========================================
@@ -363,51 +412,69 @@ function testConnection() {
  * @returns {Array} 選手オブジェクトの配列
  */
 function getPlayers(options = {}) {
-  const ss = getSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Players.name);
+  console.log('[getPlayers] 開始');
 
-  if (!sheet) {
-    return { success: false, error: 'Playersシートが見つかりません', data: [] };
-  }
+  try {
+    const ss = getSpreadsheet();
+    console.log('[getPlayers] スプレッドシート取得成功');
 
-  const lastRow = sheet.getLastRow();
-  if (lastRow <= 2) {
-    return { success: true, data: [] };
-  }
+    const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Players.name);
+    console.log('[getPlayers] Playersシート: ' + (sheet ? '取得成功' : 'null'));
 
-  const headers = SHEET_DEFINITIONS.Players.headers;
-  const dataRange = sheet.getRange(3, 1, lastRow - 2, headers.length);
-  const data = dataRange.getValues();
+    if (!sheet) {
+      return { success: false, error: 'Playersシートが見つかりません', data: [] };
+    }
 
-  // オブジェクト配列に変換
-  let players = data.map(row => {
-    const player = {};
-    headers.forEach((header, index) => {
-      player[header] = row[index];
+    const lastRow = sheet.getLastRow();
+    console.log('[getPlayers] lastRow: ' + lastRow);
+
+    if (lastRow <= 2) {
+      console.log('[getPlayers] データなし');
+      return { success: true, data: [] };
+    }
+
+    const headers = SHEET_DEFINITIONS.Players.headers;
+    const dataRange = sheet.getRange(3, 1, lastRow - 2, headers.length);
+    const data = dataRange.getValues();
+    console.log('[getPlayers] データ取得: ' + data.length + '行');
+
+    // オブジェクト配列に変換
+    let players = data.map(row => {
+      const player = {};
+      headers.forEach((header, index) => {
+        player[header] = row[index];
+      });
+      return player;
     });
-    return player;
-  });
 
-  // 削除フラグがfalseのもののみフィルタ
-  players = players.filter(p => !p.is_deleted);
+    // 削除フラグがfalseのもののみフィルタ
+    players = players.filter(p => !p.is_deleted);
+    console.log('[getPlayers] フィルタ後: ' + players.length + '件');
 
-  // ソート
-  const sortBy = options.sortBy || 'registration_number';
-  const order = options.order || 'asc';
+    // ソート
+    const sortBy = options.sortBy || 'registration_number';
+    const order = options.order || 'asc';
 
-  players.sort((a, b) => {
-    let valA = a[sortBy] || '';
-    let valB = b[sortBy] || '';
+    players.sort((a, b) => {
+      let valA = a[sortBy] || '';
+      let valB = b[sortBy] || '';
 
-    if (typeof valA === 'string') valA = valA.toLowerCase();
-    if (typeof valB === 'string') valB = valB.toLowerCase();
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
 
-    if (valA < valB) return order === 'asc' ? -1 : 1;
-    if (valA > valB) return order === 'asc' ? 1 : -1;
-    return 0;
-  });
+      if (valA < valB) return order === 'asc' ? -1 : 1;
+      if (valA > valB) return order === 'asc' ? 1 : -1;
+      return 0;
+    });
 
-  return { success: true, data: players };
+    console.log('[getPlayers] 完了');
+    return { success: true, data: players };
+
+  } catch (e) {
+    console.error('[getPlayers] エラー: ' + e.message);
+    console.error('[getPlayers] スタック: ' + e.stack);
+    return { success: false, error: 'データ取得エラー: ' + e.message, data: [] };
+  }
 }
 
 /**
