@@ -3,12 +3,12 @@
 // 初期化
 // ===========================================
 document.addEventListener('DOMContentLoaded', function() {
+  // 一覧データは常に読み込む（SPA用）
+  loadPlayers();
+
   if (INITIAL_PLAYER_ID) {
-    // プロフィールページ
+    // プロフィールページから開始
     loadPlayerProfile(INITIAL_PLAYER_ID);
-  } else {
-    // 選手一覧ページ
-    loadPlayers();
   }
 });
 
@@ -95,22 +95,31 @@ function navigateTo(url) {
   }
 }
 
-// 一覧ページを表示（GAS API使用）
+// 一覧ページを表示（SPA方式）
 function showListPage() {
-  // GAS専用のhistory APIを使用（iframe内でも動作）
-  var params = { mode: APP_MODE };
-  google.script.history.push(null, params);
-  // ページを再読み込みして一覧を表示
-  window.location.reload();
+  // ビューの表示/非表示を切り替え
+  document.getElementById('listView').style.display = '';
+  document.getElementById('profileView').style.display = 'none';
+
+  // 現在の選手IDをクリア
+  currentPlayerId = null;
+
+  // スクロールを先頭に戻す
+  window.scrollTo(0, 0);
 }
 
-// プロフィールページを表示（GAS API使用）
+// プロフィールページを表示（SPA方式）
 function showProfilePage(playerId) {
-  // GAS専用のhistory APIを使用（iframe内でも動作）
-  var params = { pid: playerId, mode: APP_MODE };
-  google.script.history.push(null, params);
-  // ページを再読み込みしてプロフィールを表示
-  window.location.reload();
+  // ビューの表示/非表示を切り替え
+  document.getElementById('listView').style.display = 'none';
+  document.getElementById('profileView').style.display = '';
+
+  // 選手データを読み込み
+  currentPlayerId = playerId;
+  loadPlayerProfile(playerId);
+
+  // スクロールを先頭に戻す
+  window.scrollTo(0, 0);
 }
 
 // ===========================================
