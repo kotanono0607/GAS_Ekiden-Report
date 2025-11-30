@@ -16,21 +16,38 @@ document.addEventListener('DOMContentLoaded', function() {
 // ===========================================
 function loadPlayers() {
   showLoading('playerList');
+  console.log('[loadPlayers] 開始');
 
   google.script.run
     .withSuccessHandler(function(result) {
+      console.log('[loadPlayers] レスポンス:', result);
+
+      // resultがnullまたはundefinedの場合のエラーハンドリング
+      if (result === null || result === undefined) {
+        console.error('[loadPlayers] サーバーからnullが返されました');
+        showToast('サーバーからの応答がありません。デプロイを確認してください。', 'error');
+        document.getElementById('playerList').innerHTML =
+          '<div class="empty-state"><p>サーバー応答エラー<br><small>新しいデプロイを作成してURLを更新してください</small></p></div>';
+        return;
+      }
+
       if (result.success) {
+        console.log('[loadPlayers] 成功: ' + result.data.length + '件');
         playersData = result.data;
         renderPlayerList(playersData);
         updateFilters(playersData);
       } else {
+        console.error('[loadPlayers] エラー:', result.error);
         showToast(result.error || '選手の読み込みに失敗しました', 'error');
         document.getElementById('playerList').innerHTML =
           '<div class="empty-state"><p>データの読み込みに失敗しました</p></div>';
       }
     })
     .withFailureHandler(function(error) {
+      console.error('[loadPlayers] 通信エラー:', error);
       showToast('エラーが発生しました: ' + error.message, 'error');
+      document.getElementById('playerList').innerHTML =
+        '<div class="empty-state"><p>通信エラー<br><small>' + error.message + '</small></p></div>';
     })
     .getPlayers();
 }
