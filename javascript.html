@@ -3,11 +3,17 @@
 // 初期化
 // ===========================================
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('[初期化] DOMContentLoaded');
+  console.log('[初期化] INITIAL_PLAYER_ID:', INITIAL_PLAYER_ID);
+  console.log('[初期化] APP_MODE:', APP_MODE);
+
   if (INITIAL_PLAYER_ID) {
     // プロフィールページ
+    console.log('[初期化] プロフィールページを読み込み');
     loadPlayerProfile(INITIAL_PLAYER_ID);
   } else {
     // 選手一覧ページ
+    console.log('[初期化] 選手一覧を読み込み');
     loadPlayers();
   }
 });
@@ -83,21 +89,28 @@ function renderPlayerList(players) {
 let currentPlayerData = null; // プロフィールページ用の選手データ
 
 function loadPlayerProfile(playerId) {
+  console.log('[loadPlayerProfile] 開始, playerId:', playerId);
   currentPlayerId = playerId;
 
   // 選手詳細を読み込み
   google.script.run
     .withSuccessHandler(function(result) {
+      console.log('[loadPlayerProfile] レスポンス:', result);
       if (result && result.success) {
+        console.log('[loadPlayerProfile] 成功, データ:', result.data);
         currentPlayerData = result.data;
         renderPlayerDetail(result.data);
       } else {
+        console.error('[loadPlayerProfile] 失敗:', result);
         document.getElementById('playerDetail').innerHTML =
           '<div class="empty-state"><p>選手情報の取得に失敗しました</p></div>';
       }
     })
     .withFailureHandler(function(error) {
+      console.error('[loadPlayerProfile] 通信エラー:', error);
       showToast('エラーが発生しました: ' + error.message, 'error');
+      document.getElementById('playerDetail').innerHTML =
+        '<div class="empty-state"><p>通信エラーが発生しました</p></div>';
     })
     .getPlayerDetail(playerId);
 

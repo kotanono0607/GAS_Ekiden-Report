@@ -188,7 +188,6 @@ body {
 .profile-page {
   display: grid;
   grid-template-columns: 1fr 320px;
-  grid-template-rows: auto 1fr;
   gap: 1rem;
 }
 
@@ -213,16 +212,20 @@ body {
   background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  overflow: hidden;
+  min-height: 400px;
+}
+
+.profile-main .player-detail {
+  padding: 1.5rem;
 }
 
 .profile-records {
   background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  max-height: 80vh;
 }
 
 .profile-records .pane-header {
@@ -233,6 +236,11 @@ body {
 
 .profile-records .pane-header h2 {
   margin: 0;
+}
+
+.profile-records .record-list {
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* ===========================================
