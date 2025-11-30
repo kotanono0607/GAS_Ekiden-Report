@@ -54,20 +54,44 @@ function renderPlayerList(players) {
   }
 
   container.innerHTML = players.map(player => `
-    <a href="${BASE_URL}?pid=${player.id}&mode=${APP_MODE}" class="player-card"
+    <div class="player-card"
        data-id="${player.id}"
        data-name="${player.name}"
        data-category="${player.category || ''}"
        data-affiliation="${player.affiliation || ''}"
-       target="_top">
+       onclick="navigateToProfile('${player.id}')"
+       style="cursor: pointer;">
       <div class="player-card-number">${player.registration_number || '-'}</div>
       <div class="player-card-name">${player.name}</div>
       <div class="player-card-info">
         <span>${player.affiliation || '-'}</span>
         <span>${player.category || '-'}</span>
       </div>
-    </a>
+    </div>
   `).join('');
+}
+
+// プロフィールページへの遷移
+function navigateToProfile(playerId) {
+  const url = BASE_URL + '?pid=' + playerId + '&mode=' + APP_MODE;
+  navigateTo(url);
+}
+
+// 選手一覧ページへの遷移
+function navigateToList() {
+  const url = BASE_URL + '?mode=' + APP_MODE;
+  navigateTo(url);
+}
+
+// ページ遷移（iframe対応）
+function navigateTo(url) {
+  // iframe内でも動作するように複数の方法を試す
+  try {
+    window.top.location.href = url;
+  } catch (e) {
+    // クロスオリジンエラーの場合は現在のウィンドウで遷移
+    window.location.href = url;
+  }
 }
 
 // ===========================================
@@ -799,7 +823,7 @@ function confirmDeletePlayer(playerId) {
 
         // プロフィールページの場合は一覧ページに戻る
         if (INITIAL_PLAYER_ID) {
-          window.top.location.href = BASE_URL + '?mode=' + APP_MODE;
+          navigateToList();
         } else {
           currentPlayerId = null;
           loadPlayers();
