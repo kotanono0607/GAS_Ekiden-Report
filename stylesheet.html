@@ -1172,22 +1172,102 @@ form h4 {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
 
+  /* プロフィールカード: 横並びを維持、写真を小さく */
   .profile-header-section {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+    flex-direction: row;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .profile-photo {
+    width: 80px;
+    height: 100px;
+    font-size: 32px;
+  }
+
+  .profile-name {
+    font-size: 20px;
+  }
+
+  .profile-name-sub {
+    font-size: 11px;
+    margin-bottom: 8px;
   }
 
   .profile-tags {
-    justify-content: center;
+    margin-top: 8px;
+    gap: 6px;
   }
 
+  .profile-tag {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .profile-divider {
+    margin: 12px 0;
+  }
+
+  .profile-info-grid {
+    gap: 10px;
+  }
+
+  .profile-info-label {
+    font-size: 10px;
+  }
+
+  .profile-info-value {
+    font-size: 13px;
+  }
+
+  .profile-card {
+    padding: 16px;
+  }
+
+  /* 自己ベスト: 3列維持、コンパクトに */
   .personal-bests {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
 
+  .pb-item {
+    padding: 12px 8px;
+  }
+
+  .pb-event {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .pb-time {
+    font-size: 16px;
+  }
+
+  .pb-date {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  /* 通算成績: 3列維持、コンパクトに */
   .stats-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .stats-item {
+    padding: 12px 8px;
+  }
+
+  .stats-number {
+    font-size: 24px;
+  }
+
+  .stats-number .unit {
+    font-size: 12px;
+  }
+
+  .stats-label {
+    font-size: 11px;
   }
 }
 
@@ -1212,16 +1292,111 @@ form h4 {
     grid-template-columns: 1fr;
   }
 
+  /* プロフィールカード: さらにコンパクトに */
+  .profile-card {
+    padding: 12px;
+  }
+
+  .profile-header-section {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .profile-photo {
+    width: 60px;
+    height: 75px;
+    font-size: 24px;
+  }
+
+  .profile-name {
+    font-size: 18px;
+  }
+
+  .profile-tags {
+    gap: 4px;
+  }
+
+  .profile-tag {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .profile-divider {
+    margin: 10px 0;
+  }
+
+  .profile-info-grid {
+    gap: 8px;
+  }
+
+  .profile-info-value {
+    font-size: 12px;
+  }
+
+  .profile-actions {
+    margin-top: 12px;
+  }
+
+  .profile-actions .btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  /* 自己ベスト: 3列維持、さらにコンパクト */
   .personal-bests {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
   }
 
+  .pb-item {
+    padding: 10px 6px;
+    border-radius: 8px;
+  }
+
+  .pb-event {
+    font-size: 10px;
+  }
+
+  .pb-time {
+    font-size: 14px;
+  }
+
+  .pb-date {
+    font-size: 9px;
+  }
+
+  /* 通算成績: 3列維持、さらにコンパクト */
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
   }
 
-  .physical-stats {
-    flex-direction: column;
+  .stats-item {
+    padding: 10px 6px;
+    border-radius: 8px;
+  }
+
+  .stats-number {
+    font-size: 20px;
+  }
+
+  .stats-number .unit {
+    font-size: 10px;
+  }
+
+  .stats-label {
+    font-size: 10px;
+  }
+
+  /* コメントカード */
+  .message-text {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .profile-card-title {
+    font-size: 12px;
+    margin-bottom: 12px;
   }
 
   .records-table th,
