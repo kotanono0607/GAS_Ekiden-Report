@@ -33,33 +33,14 @@
   </header>
 
   <? if (playerId) { ?>
-  <!-- プロフィールページ -->
-  <main class="main-container profile-page" style="display: grid;">
-    <div class="back-nav" style="padding: 0.5rem 0;">
-      <a href="?mode=<?= mode ?>" class="back-link" style="color: #4a86e8;">← 選手一覧に戻る</a>
-    </div>
-
-    <!-- 選手詳細 -->
-    <section class="profile-main" style="background: #fff; padding: 1rem; border-radius: 8px;">
-      <div id="playerDetail" class="player-detail">
-        <div class="loading" style="padding: 2rem; color: #666;">読み込み中...</div>
-      </div>
-    </section>
-
-    <!-- 記録一覧 -->
-    <aside class="profile-records" style="background: #fff; border-radius: 8px;">
-      <div class="pane-header" style="padding: 1rem; border-bottom: 1px solid #ddd;">
-        <h2 style="margin: 0; display: inline;">記録一覧</h2>
-        <? if (mode === 'admin' || mode === 'user') { ?>
-          <button class="btn btn-sm btn-primary" id="addRecordBtn" onclick="showAddRecordModal()" style="float: right;">
-            記録追加
-          </button>
-        <? } ?>
-      </div>
-      <div class="record-list" id="recordList" style="padding: 0.5rem;">
-        <div class="loading" style="padding: 2rem; color: #666;">読み込み中...</div>
-      </div>
-    </aside>
+  <!-- プロフィールページ（シンプル版） -->
+  <main style="padding: 20px;">
+    <p style="background: lime; padding: 20px;">プロフィールページ表示テスト</p>
+    <p>playerId: <?= playerId ?></p>
+    <p>mode: <?= mode ?></p>
+    <p><a href="?mode=<?= mode ?>">← 戻る</a></p>
+    <div id="playerDetail">読み込み中...</div>
+    <div id="recordList">記録読み込み中...</div>
   </main>
 
   <? } else { ?>
