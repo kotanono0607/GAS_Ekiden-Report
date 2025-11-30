@@ -8,6 +8,12 @@
 // ===========================================
 
 /**
+ * スプレッドシートID
+ * Webアプリとしてデプロイする際に必要
+ */
+const SPREADSHEET_ID = '1Obbd41yFX_KPmag4foqtijxRpUgTZCzBq0vpqff-f3k';
+
+/**
  * シート定義
  * 各シートの名前とヘッダー情報を定義
  */
@@ -307,6 +313,26 @@ function getCurrentDateTime() {
   return new Date();
 }
 
+/**
+ * スプレッドシートを取得
+ * Webアプリからの呼び出しとエディタからの呼び出し両方に対応
+ * @returns {Spreadsheet} スプレッドシートオブジェクト
+ */
+function getSpreadsheet() {
+  // Webアプリの場合はgetActiveSpreadsheetがnullを返すため、IDで開く
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (ss) {
+      return ss;
+    }
+  } catch (e) {
+    // getActiveSpreadsheetが失敗した場合
+  }
+
+  // IDで開く
+  return SpreadsheetApp.openById(SPREADSHEET_ID);
+}
+
 // ===========================================
 // テスト用関数
 // ===========================================
@@ -337,7 +363,7 @@ function testConnection() {
  * @returns {Array} 選手オブジェクトの配列
  */
 function getPlayers(options = {}) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Players.name);
 
   if (!sheet) {
@@ -394,7 +420,7 @@ function getPlayerDetail(playerId) {
     return { success: false, error: '選手IDが指定されていません', data: null };
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Players.name);
 
   if (!sheet) {
@@ -481,7 +507,7 @@ function getPlayerRecords(playerId, options = {}) {
     return { success: false, error: '選手IDが指定されていません', data: [] };
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Records.name);
 
   if (!sheet) {
@@ -587,7 +613,7 @@ function getRecordHistory(playerId, section) {
  * @returns {Object} チーム記録の配列
  */
 function getTeamRecords(options = {}) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.TeamRecords.name);
 
   if (!sheet) {
@@ -654,7 +680,7 @@ function addPersonalRecord(data) {
     return { success: false, error: '記録が指定されていません' };
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Records.name);
 
   if (!sheet) {
@@ -695,7 +721,7 @@ function updateProfile(data) {
     return { success: false, error: '選手IDが指定されていません' };
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Players.name);
 
   if (!sheet) {
@@ -790,7 +816,7 @@ function addPlayer(data) {
     return { success: false, error: '登録番号が指定されていません' };
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Players.name);
 
   if (!sheet) {
@@ -848,7 +874,7 @@ function updatePlayer(data) {
     return { success: false, error: '選手IDが指定されていません' };
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Players.name);
 
   if (!sheet) {
@@ -919,7 +945,7 @@ function deletePlayer(playerId) {
     return { success: false, error: '選手IDが指定されていません' };
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Players.name);
 
   if (!sheet) {
@@ -1055,7 +1081,7 @@ function addTeamRecord(data) {
     return { success: false, error: '大会名が指定されていません' };
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.TeamRecords.name);
 
   if (!sheet) {
@@ -1098,7 +1124,7 @@ function saveSimulation(data) {
     return { success: false, error: 'オーダーデータが指定されていません' };
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Simulations.name);
 
   if (!sheet) {
@@ -1135,7 +1161,7 @@ function saveSimulation(data) {
  * @returns {Object} シミュレーション配列
  */
 function loadSimulations() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEFINITIONS.Simulations.name);
 
   if (!sheet) {
