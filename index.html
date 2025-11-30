@@ -12,7 +12,12 @@
 <body>
   <!-- デバッグ情報（問題解決後に削除） -->
   <div id="debugInfo" style="background: yellow; padding: 10px; font-family: monospace; font-size: 12px;">
-    DEBUG: mode=<?= mode ?>, playerId=<?= playerId ?>
+    DEBUG: mode=<?= mode ?>, playerId=[<?= playerId ?>]
+  </div>
+
+  <!-- 常に表示されるテスト -->
+  <div style="background: orange; padding: 10px;">
+    このオレンジのボックスは常に表示されるはずです。これが見えない場合はテンプレート自体が失敗しています。
   </div>
 
   <!-- ヘッダー -->
