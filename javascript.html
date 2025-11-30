@@ -77,20 +77,46 @@ function navigateToProfile(playerId) {
   navigateTo(url);
 }
 
-// 選手一覧ページへの遷移
+// 選手一覧ページへの遷移（SPA方式）
 function navigateToList() {
-  const url = BASE_URL + '?mode=' + APP_MODE;
-  console.log('navigateToList - BASE_URL:', BASE_URL);
-  console.log('navigateToList - APP_MODE:', APP_MODE);
-  console.log('navigateToList - Full URL:', url);
-  navigateTo(url);
+  // プロフィールページのコンテンツを非表示にして一覧を表示
+  showListPage();
 }
 
-// ページ遷移（iframe対応）
+// プロフィールページへの遷移（SPA方式）
 function navigateTo(url) {
-  console.log('navigateTo called with URL:', url);
-  // iframe内ではwindow.locationで遷移（クロスオリジンのためwindow.topは使用不可）
-  window.location.href = url;
+  // URLからpidを抽出して動的に切り替え
+  const urlParams = new URLSearchParams(url.split('?')[1]);
+  const pid = urlParams.get('pid');
+  if (pid) {
+    showProfilePage(pid);
+  } else {
+    showListPage();
+  }
+}
+
+// 一覧ページを表示（iframe対応）
+function showListPage() {
+  // iframe内でも動作するよう、直接URLを変更
+  var url = BASE_URL + '?mode=' + APP_MODE;
+  try {
+    window.location.href = url;
+  } catch (e) {
+    // フォールバック
+    window.location.assign(url);
+  }
+}
+
+// プロフィールページを表示（iframe対応）
+function showProfilePage(playerId) {
+  // iframe内でも動作するよう、直接URLを変更
+  var url = BASE_URL + '?pid=' + playerId + '&mode=' + APP_MODE;
+  try {
+    window.location.href = url;
+  } catch (e) {
+    // フォールバック
+    window.location.assign(url);
+  }
 }
 
 // ===========================================
