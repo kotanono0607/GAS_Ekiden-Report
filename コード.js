@@ -402,6 +402,13 @@ function testWebConnection() {
   }
 }
 
+/**
+ * 最もシンプルなテスト - 固定値を返す
+ */
+function simpleTest() {
+  return { success: true, message: "サーバー接続OK", timestamp: new Date().toString() };
+}
+
 // ===========================================
 // データ取得API（共通）
 // ===========================================
