@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <?!= include('stylesheet'); ?>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-content">
+      <h1 class="header-title">縦断駅伝選手名簿</h1>
+      <div class="header-actions">
+        <? if (mode === 'admin') { ?>
+          <button class="btn btn-primary" onclick="showAddPlayerModal()">選手追加</button>
+          <a href="?page=simulation&mode=admin" class="btn btn-secondary">シミュレーション</a>
+          <a href="?page=csv&mode=admin" class="btn btn-secondary">CSV登録</a>
+        <? } ?>
+        <span class="mode-badge <?= mode === 'admin' ? 'admin' : 'user' ?>">
+          <?= mode === 'admin' ? '管理者' : 'ユーザー' ?>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <? if (playerId) { ?>
+  <!-- プロフィールページ -->
+  <main class="main-container profile-page">
+    <div class="back-nav">
+      <a href="<?= baseUrl ?>?mode=<?= mode ?>" class="back-link" target="_top">← 選手一覧に戻る</a>
+    </div>
+
+    <!-- 選手詳細 -->
+    <section class="profile-main">
+      <div id="playerDetail" class="player-detail">
+        <div class="loading">読み込み中...</div>
+      </div>
+    </section>
+
+    <!-- 記録一覧 -->
+    <aside class="profile-records">
+      <div class="pane-header">
+        <h2>記録一覧</h2>
+        <? if (mode === 'admin' || mode === 'user') { ?>
+          <button class="btn btn-sm btn-primary" id="addRecordBtn" onclick="showAddRecordModal()">
+            記録追加
+          </button>
+        <? } ?>
+      </div>
+      <div class="record-list" id="recordList">
+        <div class="loading">読み込み中...</div>
+      </div>
+    </aside>
+  </main>
+
+  <? } else { ?>
+  <!-- 選手一覧ページ -->
+  <main class="main-container list-page">
+    <div class="list-header">
+      <h2>選手一覧</h2>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="検索..." onkeyup="filterPlayers()">
+      </div>
+      <div class="filter-options">
+        <select id="categoryFilter" onchange="filterPlayers()">
+          <option value="">全カテゴリ</option>
+        </select>
+        <select id="affiliationFilter" onchange="filterPlayers()">
+          <option value="">全所属</option>
+        </select>
+      </div>
+    </div>
+    <div class="player-grid" id="playerList">
+      <div class="loading">読み込み中...</div>
+    </div>
+  </main>
+  <? } ?>
+
+  <!-- モーダル: 選手追加/編集 -->
+  <div class="modal" id="playerModal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3 id="playerModalTitle">選手追加</h3>
+        <button class="modal-close" onclick="closeModal('playerModal')">&times;</button>
+      </div>
+      <form id="playerForm" onsubmit="submitPlayerForm(event)">
+        <input type="hidden" id="playerId" name="id">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="registrationNumber">登録番号 *</label>
+            <input type="text" id="registrationNumber" name="registration_number" required>
+          </div>
+          <div class="form-group">
+            <label for="playerName">氏名 *</label>
+            <input type="text" id="playerName" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="affiliation">所属</label>
+            <input type="text" id="affiliation" name="affiliation">
+          </div>
+          <div class="form-group">
+            <label for="category">カテゴリ</label>
+            <input type="text" id="category" name="category" placeholder="例: 中学生, 一般, 30代">
+          </div>
+        </div>
+        <h4>目標タイム</h4>
+        <div class="form-grid form-grid-3">
+          <div class="form-group">
+            <label for="target1500m">1500m</label>
+            <input type="text" id="target1500m" name="target_1500m" placeholder="4:10">
+          </div>
+          <div class="form-group">
+            <label for="target3000m">3000m</label>
+            <input type="text" id="target3000m" name="target_3000m" placeholder="9:00">
+          </div>
+          <div class="form-group">
+            <label for="target5000m">5000m</label>
+            <input type="text" id="target5000m" name="target_5000m" placeholder="15:30">
+          </div>
+          <div class="form-group">
+            <label for="target10000m">10000m</label>
+            <input type="text" id="target10000m" name="target_10000m" placeholder="32:00">
+          </div>
+          <div class="form-group">
+            <label for="targetHalf">ハーフ</label>
+            <input type="text" id="targetHalf" name="target_half" placeholder="1:10:00">
+          </div>
+          <div class="form-group">
+            <label for="targetFull">フル</label>
+            <input type="text" id="targetFull" name="target_full" placeholder="2:30:00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="comment">コメント</label>
+          <textarea id="comment" name="comment" rows="3"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('playerModal')">キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- モーダル: 記録追加 -->
+  <div class="modal" id="recordModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>記録追加</h3>
+        <button class="modal-close" onclick="closeModal('recordModal')">&times;</button>
+      </div>
+      <form id="recordForm" onsubmit="submitRecordForm(event)">
+        <input type="hidden" id="recordPlayerId" name="player_id">
+        <div class="form-group">
+          <label for="raceName">大会名 *</label>
+          <input type="text" id="raceName" name="race_name" required>
+        </div>
+        <div class="form-group">
+          <label for="raceDate">日付 *</label>
+          <input type="date" id="raceDate" name="date" required>
+        </div>
+        <div class="form-group">
+          <label for="section">種目 *</label>
+          <select id="section" name="section" required>
+            <option value="">選択してください</option>
+            <option value="1500m">1500m</option>
+            <option value="3000m">3000m</option>
+            <option value="5000m">5000m</option>
+            <option value="10000m">10000m</option>
+            <option value="ハーフ">ハーフマラソン</option>
+            <option value="フル">フルマラソン</option>
+            <option value="1区">1区</option>
+            <option value="2区">2区</option>
+            <option value="3区">3区</option>
+            <option value="4区">4区</option>
+            <option value="5区">5区</option>
+            <option value="6区">6区</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="recordTime">記録 *</label>
+          <input type="text" id="recordTime" name="time" placeholder="15:30 または 1:23:45" required>
+        </div>
+        <div class="form-group">
+          <label for="recordMemo">メモ</label>
+          <textarea id="recordMemo" name="memo" rows="2"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('recordModal')">キャンセル</button>
+          <button type="submit" class="btn btn-primary">追加</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- モーダル: プロフィール編集（ユーザー用） -->
+  <div class="modal" id="profileModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>プロフィール編集</h3>
+        <button class="modal-close" onclick="closeModal('profileModal')">&times;</button>
+      </div>
+      <form id="profileForm" onsubmit="submitProfileForm(event)">
+        <input type="hidden" id="profilePlayerId" name="player_id">
+        <h4>目標タイム</h4>
+        <div class="form-grid form-grid-3">
+          <div class="form-group">
+            <label for="profileTarget1500m">1500m</label>
+            <input type="text" id="profileTarget1500m" name="target_1500m" placeholder="4:10">
+          </div>
+          <div class="form-group">
+            <label for="profileTarget3000m">3000m</label>
+            <input type="text" id="profileTarget3000m" name="target_3000m" placeholder="9:00">
+          </div>
+          <div class="form-group">
+            <label for="profileTarget5000m">5000m</label>
+            <input type="text" id="profileTarget5000m" name="target_5000m" placeholder="15:30">
+          </div>
+          <div class="form-group">
+            <label for="profileTarget10000m">10000m</label>
+            <input type="text" id="profileTarget10000m" name="target_10000m" placeholder="32:00">
+          </div>
+          <div class="form-group">
+            <label for="profileTargetHalf">ハーフ</label>
+            <input type="text" id="profileTargetHalf" name="target_half" placeholder="1:10:00">
+          </div>
+          <div class="form-group">
+            <label for="profileTargetFull">フル</label>
+            <input type="text" id="profileTargetFull" name="target_full" placeholder="2:30:00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="profileComment">コメント</label>
+          <textarea id="profileComment" name="comment" rows="3"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('profileModal')">キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- トースト通知 -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- JavaScript -->
+  <script>
+    // グローバル変数
+    const APP_MODE = '<?= mode ?>';
+    const INITIAL_PLAYER_ID = '<?= playerId ?>';
+    const BASE_URL = '<?= baseUrl ?>';
+    let currentPlayerId = INITIAL_PLAYER_ID || null;
+    let playersData = [];
+    let recordChart = null;
+  </script>
+  <?!= include('javascript'); ?>
+</body>
+</html>

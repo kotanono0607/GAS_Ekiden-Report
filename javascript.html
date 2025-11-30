@@ -1,0 +1,645 @@
+<script>
+// ===========================================
+// 初期化
+// ===========================================
+document.addEventListener('DOMContentLoaded', function() {
+  if (INITIAL_PLAYER_ID) {
+    // プロフィールページ
+    loadPlayerProfile(INITIAL_PLAYER_ID);
+  } else {
+    // 選手一覧ページ
+    loadPlayers();
+  }
+});
+
+// ===========================================
+// 選手一覧
+// ===========================================
+function loadPlayers() {
+  showLoading('playerList');
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result === null || result === undefined) {
+        showToast('サーバーからの応答がありません', 'error');
+        document.getElementById('playerList').innerHTML =
+          '<div class="empty-state"><p>サーバー応答エラー</p></div>';
+        return;
+      }
+
+      if (result.success) {
+        playersData = result.data;
+        renderPlayerList(playersData);
+        updateFilters(playersData);
+      } else {
+        showToast(result.error || '選手の読み込みに失敗しました', 'error');
+        document.getElementById('playerList').innerHTML =
+          '<div class="empty-state"><p>データの読み込みに失敗しました</p></div>';
+      }
+    })
+    .withFailureHandler(function(error) {
+      showToast('エラーが発生しました: ' + error.message, 'error');
+      document.getElementById('playerList').innerHTML =
+        '<div class="empty-state"><p>通信エラー</p></div>';
+    })
+    .getPlayers();
+}
+
+function renderPlayerList(players) {
+  const container = document.getElementById('playerList');
+
+  if (!players || players.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>選手が登録されていません</p></div>';
+    return;
+  }
+
+  container.innerHTML = players.map(player => `
+    <a href="${BASE_URL}?pid=${player.id}&mode=${APP_MODE}" class="player-card"
+       data-id="${player.id}"
+       data-name="${player.name}"
+       data-category="${player.category || ''}"
+       data-affiliation="${player.affiliation || ''}"
+       target="_top">
+      <div class="player-card-number">${player.registration_number || '-'}</div>
+      <div class="player-card-name">${player.name}</div>
+      <div class="player-card-info">
+        <span>${player.affiliation || '-'}</span>
+        <span>${player.category || '-'}</span>
+      </div>
+    </a>
+  `).join('');
+}
+
+// ===========================================
+// プロフィールページ
+// ===========================================
+let currentPlayerData = null; // プロフィールページ用の選手データ
+
+function loadPlayerProfile(playerId) {
+  currentPlayerId = playerId;
+
+  // 選手詳細を読み込み
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result && result.success) {
+        currentPlayerData = result.data;
+        renderPlayerDetail(result.data);
+      } else {
+        document.getElementById('playerDetail').innerHTML =
+          '<div class="empty-state"><p>選手情報の取得に失敗しました</p></div>';
+      }
+    })
+    .withFailureHandler(function(error) {
+      showToast('エラーが発生しました: ' + error.message, 'error');
+      document.getElementById('playerDetail').innerHTML =
+        '<div class="empty-state"><p>通信エラーが発生しました</p></div>';
+    })
+    .getPlayerDetail(playerId);
+
+  // 記録を読み込み
+  loadPlayerRecords(playerId);
+}
+
+function updateFilters(players) {
+  // カテゴリフィルタ
+  const categories = [...new Set(players.map(p => p.category).filter(c => c))];
+  const categorySelect = document.getElementById('categoryFilter');
+  categorySelect.innerHTML = '<option value="">全カテゴリ</option>' +
+    categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  // 所属フィルタ
+  const affiliations = [...new Set(players.map(p => p.affiliation).filter(a => a))];
+  const affiliationSelect = document.getElementById('affiliationFilter');
+  affiliationSelect.innerHTML = '<option value="">全所属</option>' +
+    affiliations.map(a => `<option value="${a}">${a}</option>`).join('');
+}
+
+function filterPlayers() {
+  const searchText = document.getElementById('searchInput').value.toLowerCase();
+  const categoryFilter = document.getElementById('categoryFilter').value;
+  const affiliationFilter = document.getElementById('affiliationFilter').value;
+
+  const filtered = playersData.filter(player => {
+    const matchesSearch = !searchText ||
+      player.name.toLowerCase().includes(searchText) ||
+      (player.registration_number && player.registration_number.toLowerCase().includes(searchText)) ||
+      (player.affiliation && player.affiliation.toLowerCase().includes(searchText));
+
+    const matchesCategory = !categoryFilter || player.category === categoryFilter;
+    const matchesAffiliation = !affiliationFilter || player.affiliation === affiliationFilter;
+
+    return matchesSearch && matchesCategory && matchesAffiliation;
+  });
+
+  renderPlayerList(filtered);
+}
+
+// ===========================================
+// 選手詳細
+// ===========================================
+function selectPlayer(playerId) {
+  currentPlayerId = playerId;
+
+  // リストのアクティブ状態を更新
+  document.querySelectorAll('.player-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.id === playerId);
+  });
+
+  // 詳細を読み込み
+  showLoading('playerDetail');
+  document.getElementById('addRecordBtn').style.display = 'inline-flex';
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.success) {
+        renderPlayerDetail(result.data);
+        loadPlayerRecords(playerId);
+      } else {
+        showToast(result.error || '選手情報の取得に失敗しました', 'error');
+      }
+    })
+    .withFailureHandler(function(error) {
+      showToast('エラーが発生しました: ' + error.message, 'error');
+    })
+    .getPlayerDetail(playerId);
+}
+
+function renderPlayerDetail(player) {
+  const container = document.getElementById('playerDetail');
+
+  const targets = [
+    { key: 'target_1500m', label: '1500m' },
+    { key: 'target_3000m', label: '3000m' },
+    { key: 'target_5000m', label: '5000m' },
+    { key: 'target_10000m', label: '10000m' },
+    { key: 'target_half', label: 'ハーフ' },
+    { key: 'target_full', label: 'フル' }
+  ];
+
+  const targetCards = targets.map(t => {
+    const targetTime = player[t.key];
+    const bestRecord = player.bestRecords ? player.bestRecords[t.label] : null;
+
+    let diffHtml = '';
+    if (targetTime && bestRecord) {
+      const diff = calculateDiff(bestRecord.time, targetTime);
+      diffHtml = `<div class="target-card-diff ${diff.achieved ? 'achieved' : 'pending'}">${diff.message}</div>`;
+    }
+
+    return `
+      <div class="target-card">
+        <div class="target-card-label">${t.label}</div>
+        <div class="target-card-value">${targetTime || '-'}</div>
+        ${bestRecord ? `<div class="target-card-label">PB: ${bestRecord.time}</div>` : ''}
+        ${diffHtml}
+      </div>
+    `;
+  }).join('');
+
+  const adminButtons = APP_MODE === 'admin' ? `
+    <button class="btn btn-outline btn-sm" onclick="showEditPlayerModal('${player.id}')">編集</button>
+    <button class="btn btn-danger btn-sm" onclick="confirmDeletePlayer('${player.id}')">削除</button>
+  ` : `
+    <button class="btn btn-outline btn-sm" onclick="showProfileModal('${player.id}')">目標編集</button>
+  `;
+
+  container.innerHTML = `
+    <div class="detail-header">
+      <div>
+        <div class="detail-name">${player.name}</div>
+        <div class="detail-meta">
+          <span>No. ${player.registration_number || '-'}</span>
+          <span>${player.affiliation || '-'}</span>
+          <span>${player.category || '-'}</span>
+        </div>
+      </div>
+      <div class="detail-actions">
+        ${adminButtons}
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h3>目標タイム</h3>
+      <div class="target-grid">
+        ${targetCards}
+      </div>
+    </div>
+
+    ${player.comment ? `
+    <div class="detail-section">
+      <h3>コメント</h3>
+      <p>${player.comment}</p>
+    </div>
+    ` : ''}
+
+    <div class="detail-section">
+      <h3>記録推移グラフ</h3>
+      <div class="chart-controls">
+        <select id="chartSection" onchange="updateChart()">
+          <option value="">全種目</option>
+          <option value="1500m">1500m</option>
+          <option value="3000m">3000m</option>
+          <option value="5000m">5000m</option>
+          <option value="10000m">10000m</option>
+          <option value="ハーフ">ハーフ</option>
+          <option value="フル">フル</option>
+        </select>
+      </div>
+      <div class="chart-container">
+        <canvas id="recordChart"></canvas>
+      </div>
+    </div>
+  `;
+
+  // グラフを初期化
+  loadRecordChart(player.id);
+}
+
+function calculateDiff(bestTime, targetTime) {
+  const toSeconds = (timeStr) => {
+    if (!timeStr) return null;
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return null;
+  };
+
+  const bestSec = toSeconds(bestTime);
+  const targetSec = toSeconds(targetTime);
+
+  if (bestSec === null || targetSec === null) return { achieved: false, message: '' };
+
+  const diff = bestSec - targetSec;
+  const absDiff = Math.abs(diff);
+  const mins = Math.floor(absDiff / 60);
+  const secs = absDiff % 60;
+  const diffStr = mins > 0 ? `${mins}:${String(secs).padStart(2, '0')}` : `${secs}秒`;
+
+  if (diff <= 0) {
+    return { achieved: true, message: '目標達成!' };
+  } else {
+    return { achieved: false, message: `あと ${diffStr}` };
+  }
+}
+
+// ===========================================
+// 記録一覧
+// ===========================================
+function loadPlayerRecords(playerId) {
+  showLoading('recordList');
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.success) {
+        renderRecordList(result.data);
+      }
+    })
+    .withFailureHandler(function(error) {
+      console.error('記録取得エラー:', error);
+    })
+    .getPlayerRecords(playerId);
+}
+
+function renderRecordList(records) {
+  const container = document.getElementById('recordList');
+
+  if (!records || records.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>記録がありません</p></div>';
+    return;
+  }
+
+  container.innerHTML = records.map(record => {
+    const dateStr = record.date ? formatDateStr(record.date) : '-';
+    return `
+      <div class="record-item">
+        <div class="record-item-header">
+          <span class="record-item-date">${dateStr}</span>
+          <span class="record-item-time">${record.time || '-'}</span>
+        </div>
+        <div class="record-item-race">${record.race_name || '-'}</div>
+        <span class="record-item-section">${record.section || '-'}</span>
+        ${record.memo ? `<div style="font-size:0.8rem;color:#666;margin-top:0.25rem;">${record.memo}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function formatDateStr(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return date;
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// ===========================================
+// グラフ
+// ===========================================
+function loadRecordChart(playerId, section) {
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.success && result.data) {
+        renderChart(result.data);
+      }
+    })
+    .getRecordHistory(playerId, section || '');
+}
+
+function renderChart(chartData) {
+  const ctx = document.getElementById('recordChart');
+  if (!ctx) return;
+
+  // 既存のチャートを破棄
+  if (recordChart) {
+    recordChart.destroy();
+  }
+
+  const datasets = [];
+  const colors = [
+    '#4a86e8', '#ea4335', '#34a853', '#fbbc04', '#9334e8', '#e84a8a'
+  ];
+
+  let colorIndex = 0;
+  for (const section in chartData.datasets) {
+    const data = chartData.datasets[section];
+    datasets.push({
+      label: section,
+      data: data.map(d => ({ x: d.x, y: d.y })),
+      borderColor: colors[colorIndex % colors.length],
+      backgroundColor: colors[colorIndex % colors.length] + '20',
+      tension: 0.1,
+      fill: false
+    });
+    colorIndex++;
+  }
+
+  if (datasets.length === 0) {
+    return;
+  }
+
+  recordChart = new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          type: 'category',
+          title: { display: true, text: '日付' }
+        },
+        y: {
+          title: { display: true, text: '記録（秒）' },
+          reverse: true, // 記録は少ないほうが良いので逆順
+          ticks: {
+            callback: function(value) {
+              const mins = Math.floor(value / 60);
+              const secs = value % 60;
+              return `${mins}:${String(secs).padStart(2, '0')}`;
+            }
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const point = chartData.datasets[context.dataset.label][context.dataIndex];
+              return `${context.dataset.label}: ${point.time} (${point.race_name})`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateChart() {
+  const section = document.getElementById('chartSection').value;
+  if (currentPlayerId) {
+    loadRecordChart(currentPlayerId, section);
+  }
+}
+
+// ===========================================
+// モーダル
+// ===========================================
+function openModal(modalId) {
+  document.getElementById(modalId).classList.add('active');
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove('active');
+}
+
+function showAddPlayerModal() {
+  document.getElementById('playerModalTitle').textContent = '選手追加';
+  document.getElementById('playerForm').reset();
+  document.getElementById('playerId').value = '';
+  openModal('playerModal');
+}
+
+function showEditPlayerModal(playerId) {
+  document.getElementById('playerModalTitle').textContent = '選手編集';
+
+  // プロフィールページではcurrentPlayerDataを、一覧ページではplayersDataを使用
+  const player = currentPlayerData && currentPlayerData.id === playerId
+    ? currentPlayerData
+    : playersData.find(p => p.id === playerId);
+
+  if (!player) return;
+
+  document.getElementById('playerId').value = player.id;
+  document.getElementById('registrationNumber').value = player.registration_number || '';
+  document.getElementById('playerName').value = player.name || '';
+  document.getElementById('affiliation').value = player.affiliation || '';
+  document.getElementById('category').value = player.category || '';
+  document.getElementById('target1500m').value = player.target_1500m || '';
+  document.getElementById('target3000m').value = player.target_3000m || '';
+  document.getElementById('target5000m').value = player.target_5000m || '';
+  document.getElementById('target10000m').value = player.target_10000m || '';
+  document.getElementById('targetHalf').value = player.target_half || '';
+  document.getElementById('targetFull').value = player.target_full || '';
+  document.getElementById('comment').value = player.comment || '';
+
+  openModal('playerModal');
+}
+
+function showAddRecordModal() {
+  if (!currentPlayerId) {
+    showToast('選手を選択してください', 'error');
+    return;
+  }
+
+  document.getElementById('recordForm').reset();
+  document.getElementById('recordPlayerId').value = currentPlayerId;
+  document.getElementById('raceDate').value = new Date().toISOString().split('T')[0];
+  openModal('recordModal');
+}
+
+function showProfileModal(playerId) {
+  // プロフィールページではcurrentPlayerDataを、一覧ページではplayersDataを使用
+  const player = currentPlayerData && currentPlayerData.id === playerId
+    ? currentPlayerData
+    : playersData.find(p => p.id === playerId);
+
+  if (!player) return;
+
+  document.getElementById('profilePlayerId').value = player.id;
+  document.getElementById('profileTarget1500m').value = player.target_1500m || '';
+  document.getElementById('profileTarget3000m').value = player.target_3000m || '';
+  document.getElementById('profileTarget5000m').value = player.target_5000m || '';
+  document.getElementById('profileTarget10000m').value = player.target_10000m || '';
+  document.getElementById('profileTargetHalf').value = player.target_half || '';
+  document.getElementById('profileTargetFull').value = player.target_full || '';
+  document.getElementById('profileComment').value = player.comment || '';
+
+  openModal('profileModal');
+}
+
+// ===========================================
+// フォーム送信
+// ===========================================
+function submitPlayerForm(event) {
+  event.preventDefault();
+
+  const formData = new FormData(event.target);
+  const data = Object.fromEntries(formData.entries());
+
+  const isEdit = !!data.id;
+  const apiFunc = isEdit ? 'updatePlayer' : 'addPlayer';
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.success) {
+        showToast(isEdit ? '選手情報を更新しました' : '選手を追加しました', 'success');
+        closeModal('playerModal');
+
+        // プロフィールページの場合はプロフィールを再読み込み
+        if (INITIAL_PLAYER_ID && isEdit) {
+          loadPlayerProfile(INITIAL_PLAYER_ID);
+        } else {
+          loadPlayers();
+        }
+      } else {
+        showToast(result.error || '保存に失敗しました', 'error');
+      }
+    })
+    .withFailureHandler(function(error) {
+      showToast('エラーが発生しました: ' + error.message, 'error');
+    })
+    [apiFunc](data);
+}
+
+function submitRecordForm(event) {
+  event.preventDefault();
+
+  const formData = new FormData(event.target);
+  const data = Object.fromEntries(formData.entries());
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.success) {
+        showToast('記録を追加しました', 'success');
+        closeModal('recordModal');
+
+        // プロフィールページの場合は詳細と記録を再読み込み
+        if (INITIAL_PLAYER_ID) {
+          loadPlayerProfile(INITIAL_PLAYER_ID);
+        } else {
+          loadPlayerRecords(currentPlayerId);
+          selectPlayer(currentPlayerId);
+        }
+      } else {
+        showToast(result.error || '記録の追加に失敗しました', 'error');
+      }
+    })
+    .withFailureHandler(function(error) {
+      showToast('エラーが発生しました: ' + error.message, 'error');
+    })
+    .addPersonalRecord(data);
+}
+
+function submitProfileForm(event) {
+  event.preventDefault();
+
+  const formData = new FormData(event.target);
+  const data = Object.fromEntries(formData.entries());
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.success) {
+        showToast('プロフィールを更新しました', 'success');
+        closeModal('profileModal');
+
+        // プロフィールページの場合はプロフィールを再読み込み
+        if (INITIAL_PLAYER_ID) {
+          loadPlayerProfile(INITIAL_PLAYER_ID);
+        } else {
+          loadPlayers();
+          selectPlayer(data.player_id);
+        }
+      } else {
+        showToast(result.error || '更新に失敗しました', 'error');
+      }
+    })
+    .withFailureHandler(function(error) {
+      showToast('エラーが発生しました: ' + error.message, 'error');
+    })
+    .updateProfile(data);
+}
+
+// ===========================================
+// 削除
+// ===========================================
+function confirmDeletePlayer(playerId) {
+  if (!confirm('この選手を削除しますか？\nこの操作は取り消せません。')) {
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.success) {
+        showToast('選手を削除しました', 'success');
+
+        // プロフィールページの場合は一覧ページに戻る
+        if (INITIAL_PLAYER_ID) {
+          window.top.location.href = BASE_URL + '?mode=' + APP_MODE;
+        } else {
+          currentPlayerId = null;
+          loadPlayers();
+          document.getElementById('playerDetail').innerHTML =
+            '<div class="empty-state"><p>左の一覧から選手を選択してください</p></div>';
+          document.getElementById('recordList').innerHTML =
+            '<div class="empty-state"><p>選手を選択すると記録が表示されます</p></div>';
+          const addRecordBtn = document.getElementById('addRecordBtn');
+          if (addRecordBtn) addRecordBtn.style.display = 'none';
+        }
+      } else {
+        showToast(result.error || '削除に失敗しました', 'error');
+      }
+    })
+    .withFailureHandler(function(error) {
+      showToast('エラーが発生しました: ' + error.message, 'error');
+    })
+    .deletePlayer(playerId);
+}
+
+// ===========================================
+// ユーティリティ
+// ===========================================
+function showLoading(elementId) {
+  document.getElementById(elementId).innerHTML = '<div class="loading">読み込み中...</div>';
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 4000);
+}
+</script>

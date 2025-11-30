@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <?!= include('stylesheet'); ?>
+  <style>
+    /* シミュレーション専用スタイル */
+    .sim-container {
+      display: grid;
+      grid-template-columns: 300px 1fr 300px;
+      gap: 1rem;
+      padding: 1rem;
+      max-width: 1600px;
+      margin: 0 auto;
+      min-height: calc(100vh - 70px);
+    }
+
+    .sim-panel {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sim-panel-header {
+      padding: 1rem;
+      background: var(--light-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sim-panel-header h2 {
+      font-size: 1.1rem;
+      margin-bottom: 0;
+    }
+
+    .sim-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    /* 選手カード */
+    .player-card {
+      background: var(--light-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      cursor: grab;
+      transition: var(--transition);
+    }
+
+    .player-card:hover {
+      box-shadow: var(--shadow);
+    }
+
+    .player-card.sortable-ghost {
+      opacity: 0.4;
+    }
+
+    .player-card.sortable-chosen {
+      box-shadow: var(--shadow-lg);
+    }
+
+    .player-card-name {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .player-card-info {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .player-card-times {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .player-card-time {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.4rem;
+      background: white;
+      border-radius: 3px;
+    }
+
+    /* 区間スロット */
+    .section-slots {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem;
+    }
+
+    .section-slot {
+      background: white;
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius);
+      padding: 1rem;
+      min-height: 100px;
+      transition: var(--transition);
+    }
+
+    .section-slot.has-player {
+      border-style: solid;
+      border-color: var(--primary-color);
+    }
+
+    .section-slot-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-slot-label {
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .section-slot-distance {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .section-slot-content {
+      min-height: 60px;
+    }
+
+    .section-slot-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 60px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* 合計タイム表示 */
+    .total-time-display {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 1.5rem;
+      text-align: center;
+      margin: 1rem;
+      border-radius: var(--radius);
+    }
+
+    .total-time-label {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .total-time-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    /* 保存済みシミュレーション */
+    .saved-sim-item {
+      background: var(--light-color);
+      padding: 0.75rem;
+      border-radius: var(--radius-sm);
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .saved-sim-item:hover {
+      background: #e3f2fd;
+    }
+
+    .saved-sim-title {
+      font-weight: 500;
+    }
+
+    .saved-sim-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 1200px) {
+      .sim-container {
+        grid-template-columns: 1fr;
+      }
+
+      .section-slots {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-content">
+      <h1 class="header-title">区間オーダー シミュレーション</h1>
+      <div class="header-actions">
+        <a href="?mode=admin" class="btn btn-secondary">名簿に戻る</a>
+        <button class="btn btn-primary" onclick="saveCurrentSimulation()">保存</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="sim-container">
+    <!-- 左: 選手一覧 -->
+    <div class="sim-panel">
+      <div class="sim-panel-header">
+        <h2>選手一覧</h2>
+        <input type="text" id="playerSearch" placeholder="検索..."
+               style="width:100%;margin-top:0.5rem;padding:0.4rem;border:1px solid var(--border-color);border-radius:4px;"
+               onkeyup="filterSimPlayers()">
+      </div>
+      <div class="sim-panel-body">
+        <div id="playerPool" class="player-pool">
+          <div class="loading">読み込み中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中央: 区間配置 -->
+    <div class="sim-panel">
+      <div class="sim-panel-header">
+        <h2>区間配置</h2>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+          <select id="sectionCount" onchange="updateSections()">
+            <option value="5">5区間</option>
+            <option value="6" selected>6区間</option>
+            <option value="7">7区間</option>
+            <option value="8">8区間</option>
+            <option value="10">10区間</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="clearAllSections()">クリア</button>
+        </div>
+      </div>
+      <div class="sim-panel-body">
+        <div class="section-slots" id="sectionSlots">
+          <!-- 動的に生成 -->
+        </div>
+      </div>
+      <div class="total-time-display">
+        <div class="total-time-label">予想総合タイム</div>
+        <div class="total-time-value" id="totalTime">--:--:--</div>
+      </div>
+    </div>
+
+    <!-- 右: 保存済み -->
+    <div class="sim-panel">
+      <div class="sim-panel-header">
+        <h2>保存済みシミュレーション</h2>
+      </div>
+      <div class="sim-panel-body">
+        <div id="savedSimulations">
+          <div class="loading">読み込み中...</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 保存モーダル -->
+  <div class="modal" id="saveModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>シミュレーションを保存</h3>
+        <button class="modal-close" onclick="closeModal('saveModal')">&times;</button>
+      </div>
+      <form id="saveForm" onsubmit="submitSaveForm(event)">
+        <div class="form-group">
+          <label for="simTitle">シミュレーション名 *</label>
+          <input type="text" id="simTitle" name="title" required placeholder="例: Aチーム案">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('saveModal')">キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- トースト -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    let playersData = [];
+    let sectionSortables = [];
+    let poolSortable = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadPlayers();
+      loadSavedSimulations();
+      updateSections();
+    });
+
+    function loadPlayers() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            playersData = result.data;
+            renderPlayerPool(playersData);
+          }
+        })
+        .getPlayers();
+    }
+
+    function renderPlayerPool(players) {
+      const container = document.getElementById('playerPool');
+
+      if (!players || players.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>選手がいません</p></div>';
+        return;
+      }
+
+      container.innerHTML = players.map(p => createPlayerCardHTML(p)).join('');
+
+      // Sortable初期化
+      if (poolSortable) poolSortable.destroy();
+      poolSortable = new Sortable(container, {
+        group: 'simulation',
+        animation: 150,
+        sort: false,
+        onEnd: calculateTotalTime
+      });
+    }
+
+    function createPlayerCardHTML(player) {
+      const times = [];
+      if (player.target_5000m) times.push(`5K: ${player.target_5000m}`);
+      if (player.target_10000m) times.push(`10K: ${player.target_10000m}`);
+      if (player.target_half) times.push(`H: ${player.target_half}`);
+
+      return `
+        <div class="player-card" data-id="${player.id}" data-name="${player.name}"
+             data-5000="${player.target_5000m || ''}" data-10000="${player.target_10000m || ''}"
+             data-half="${player.target_half || ''}">
+          <div class="player-card-name">${player.name}</div>
+          <div class="player-card-info">${player.registration_number || ''} | ${player.category || ''}</div>
+          ${times.length > 0 ? `
+            <div class="player-card-times">
+              ${times.map(t => `<span class="player-card-time">${t}</span>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function filterSimPlayers() {
+      const search = document.getElementById('playerSearch').value.toLowerCase();
+      const filtered = playersData.filter(p =>
+        p.name.toLowerCase().includes(search) ||
+        (p.registration_number && p.registration_number.toLowerCase().includes(search))
+      );
+      renderPlayerPool(filtered);
+    }
+
+    function updateSections() {
+      const count = parseInt(document.getElementById('sectionCount').value);
+      const container = document.getElementById('sectionSlots');
+
+      // 既存のSortableを破棄
+      sectionSortables.forEach(s => s.destroy());
+      sectionSortables = [];
+
+      container.innerHTML = '';
+
+      for (let i = 1; i <= count; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'section-slot';
+        slot.innerHTML = `
+          <div class="section-slot-header">
+            <span class="section-slot-label">${i}区</span>
+            <span class="section-slot-distance">
+              <select class="section-distance" data-section="${i}" onchange="calculateTotalTime()">
+                <option value="">距離選択</option>
+                <option value="3">3km</option>
+                <option value="5">5km</option>
+                <option value="8">8km</option>
+                <option value="10">10km</option>
+                <option value="12">12km</option>
+                <option value="15">15km</option>
+                <option value="21.0975">ハーフ</option>
+              </select>
+            </span>
+          </div>
+          <div class="section-slot-content" id="section-${i}">
+            <div class="section-slot-empty">選手をドラッグ</div>
+          </div>
+        `;
+        container.appendChild(slot);
+
+        // Sortable初期化
+        const sortable = new Sortable(document.getElementById(`section-${i}`), {
+          group: 'simulation',
+          animation: 150,
+          onAdd: function(evt) {
+            evt.to.querySelector('.section-slot-empty')?.remove();
+            evt.to.closest('.section-slot').classList.add('has-player');
+            calculateTotalTime();
+          },
+          onRemove: function(evt) {
+            if (evt.from.children.length === 0) {
+              evt.from.innerHTML = '<div class="section-slot-empty">選手をドラッグ</div>';
+              evt.from.closest('.section-slot').classList.remove('has-player');
+            }
+            calculateTotalTime();
+          }
+        });
+        sectionSortables.push(sortable);
+      }
+    }
+
+    function calculateTotalTime() {
+      let totalSeconds = 0;
+      let hasAllData = true;
+
+      const count = parseInt(document.getElementById('sectionCount').value);
+
+      for (let i = 1; i <= count; i++) {
+        const slot = document.getElementById(`section-${i}`);
+        const playerCard = slot.querySelector('.player-card');
+        const distanceSelect = document.querySelector(`.section-distance[data-section="${i}"]`);
+        const distance = parseFloat(distanceSelect?.value || 0);
+
+        if (!playerCard || !distance) {
+          hasAllData = false;
+          continue;
+        }
+
+        // 距離に応じてタイムを推定
+        let timeStr = '';
+        if (distance <= 5) {
+          timeStr = playerCard.dataset['5000'];
+        } else if (distance <= 10) {
+          timeStr = playerCard.dataset['10000'];
+        } else {
+          timeStr = playerCard.dataset['half'];
+        }
+
+        if (timeStr) {
+          const seconds = timeToSeconds(timeStr);
+          if (seconds) {
+            // 距離補正
+            let ratio = 1;
+            if (distance <= 5) ratio = distance / 5;
+            else if (distance <= 10) ratio = distance / 10;
+            else ratio = distance / 21.0975;
+
+            totalSeconds += Math.round(seconds * ratio);
+          }
+        }
+      }
+
+      document.getElementById('totalTime').textContent =
+        totalSeconds > 0 ? secondsToTime(totalSeconds) : '--:--:--';
+    }
+
+    function timeToSeconds(str) {
+      if (!str) return 0;
+      const parts = str.split(':').map(Number);
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      return 0;
+    }
+
+    function secondsToTime(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      if (h > 0) {
+        return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      }
+      return `${m}:${String(s).padStart(2,'0')}`;
+    }
+
+    function clearAllSections() {
+      const count = parseInt(document.getElementById('sectionCount').value);
+      for (let i = 1; i <= count; i++) {
+        const slot = document.getElementById(`section-${i}`);
+        const cards = slot.querySelectorAll('.player-card');
+        cards.forEach(card => {
+          document.getElementById('playerPool').appendChild(card);
+        });
+        slot.innerHTML = '<div class="section-slot-empty">選手をドラッグ</div>';
+        slot.closest('.section-slot').classList.remove('has-player');
+      }
+      calculateTotalTime();
+    }
+
+    function saveCurrentSimulation() {
+      openModal('saveModal');
+    }
+
+    function submitSaveForm(event) {
+      event.preventDefault();
+
+      const title = document.getElementById('simTitle').value;
+      const count = parseInt(document.getElementById('sectionCount').value);
+      const orderData = [];
+
+      for (let i = 1; i <= count; i++) {
+        const slot = document.getElementById(`section-${i}`);
+        const playerCard = slot.querySelector('.player-card');
+        const distanceSelect = document.querySelector(`.section-distance[data-section="${i}"]`);
+
+        orderData.push({
+          section: i,
+          player_id: playerCard ? playerCard.dataset.id : null,
+          player_name: playerCard ? playerCard.dataset.name : null,
+          distance: distanceSelect ? distanceSelect.value : ''
+        });
+      }
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showToast('シミュレーションを保存しました', 'success');
+            closeModal('saveModal');
+            document.getElementById('simTitle').value = '';
+            loadSavedSimulations();
+          } else {
+            showToast(result.error || '保存に失敗しました', 'error');
+          }
+        })
+        .saveSimulation({ title: title, order_json: orderData });
+    }
+
+    function loadSavedSimulations() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            renderSavedSimulations(result.data);
+          }
+        })
+        .loadSimulations();
+    }
+
+    function renderSavedSimulations(simulations) {
+      const container = document.getElementById('savedSimulations');
+
+      if (!simulations || simulations.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>保存済みのシミュレーションがありません</p></div>';
+        return;
+      }
+
+      container.innerHTML = simulations.map(sim => {
+        const date = sim.created_at ? new Date(sim.created_at).toLocaleDateString('ja-JP') : '';
+        return `
+          <div class="saved-sim-item" onclick="loadSimulation('${sim.sim_id}')">
+            <div class="saved-sim-title">${sim.title}</div>
+            <div class="saved-sim-date">${date}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function loadSimulation(simId) {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            const sim = result.data.find(s => s.sim_id === simId);
+            if (sim && sim.order_json) {
+              applySimulation(sim.order_json);
+            }
+          }
+        })
+        .loadSimulations();
+    }
+
+    function applySimulation(orderData) {
+      // まずクリア
+      clearAllSections();
+
+      // 区間数を設定
+      const maxSection = Math.max(...orderData.map(o => o.section));
+      document.getElementById('sectionCount').value = maxSection;
+      updateSections();
+
+      // 少し待ってから適用
+      setTimeout(() => {
+        orderData.forEach(order => {
+          if (order.player_id) {
+            const playerCard = document.querySelector(`.player-card[data-id="${order.player_id}"]`);
+            const slot = document.getElementById(`section-${order.section}`);
+
+            if (playerCard && slot) {
+              slot.querySelector('.section-slot-empty')?.remove();
+              slot.appendChild(playerCard);
+              slot.closest('.section-slot').classList.add('has-player');
+            }
+          }
+
+          if (order.distance) {
+            const distanceSelect = document.querySelector(`.section-distance[data-section="${order.section}"]`);
+            if (distanceSelect) distanceSelect.value = order.distance;
+          }
+        });
+
+        calculateTotalTime();
+        showToast('シミュレーションを読み込みました', 'success');
+      }, 100);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function showToast(message, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+  </script>
+</body>
+</html>
