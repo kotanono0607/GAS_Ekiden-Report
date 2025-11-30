@@ -409,6 +409,30 @@ function simpleTest() {
   return { success: true, message: "サーバー接続OK", timestamp: new Date().toString() };
 }
 
+/**
+ * 段階的テスト - 問題の切り分け用
+ */
+function debugTest1() {
+  // 文字列のみ
+  return "hello";
+}
+
+function debugTest2() {
+  // シンプルなオブジェクト
+  return { a: 1, b: "test" };
+}
+
+function debugTest3() {
+  // スプレッドシートにアクセスせずにgetPlayersと同じ構造を返す
+  return {
+    success: true,
+    data: [
+      { id: "1", name: "テスト太郎", registration_number: "001" },
+      { id: "2", name: "テスト花子", registration_number: "002" }
+    ]
+  };
+}
+
 // ===========================================
 // データ取得API（共通）
 // ===========================================

@@ -11,6 +11,21 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+// デバッグテスト用関数
+function runDebugTest(funcName) {
+  console.log('[DEBUG] ' + funcName + ' 呼び出し開始');
+  google.script.run
+    .withSuccessHandler(function(result) {
+      console.log('[DEBUG] ' + funcName + ' 結果:', result);
+      alert(funcName + ' 結果: ' + JSON.stringify(result));
+    })
+    .withFailureHandler(function(error) {
+      console.error('[DEBUG] ' + funcName + ' エラー:', error);
+      alert(funcName + ' エラー: ' + error.message);
+    })
+    [funcName]();
+}
+
 // ===========================================
 // 選手一覧
 // ===========================================
