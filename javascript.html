@@ -68,11 +68,12 @@ function renderPlayerList(players) {
   }
 
   container.innerHTML = players.map(player => `
-    <a href="?pid=${player.id}&mode=${APP_MODE}" class="player-card"
+    <a href="${BASE_URL}?pid=${player.id}&mode=${APP_MODE}" class="player-card"
        data-id="${player.id}"
        data-name="${player.name}"
        data-category="${player.category || ''}"
-       data-affiliation="${player.affiliation || ''}">
+       data-affiliation="${player.affiliation || ''}"
+       target="_top">
       <div class="player-card-number">${player.registration_number || '-'}</div>
       <div class="player-card-name">${player.name}</div>
       <div class="player-card-info">
@@ -621,7 +622,7 @@ function confirmDeletePlayer(playerId) {
 
         // プロフィールページの場合は一覧ページに戻る
         if (INITIAL_PLAYER_ID) {
-          window.location.href = '?mode=' + APP_MODE;
+          window.top.location.href = BASE_URL + '?mode=' + APP_MODE;
         } else {
           currentPlayerId = null;
           loadPlayers();

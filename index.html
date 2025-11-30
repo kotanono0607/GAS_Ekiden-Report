@@ -43,7 +43,7 @@
     <p style="background: lime; padding: 20px;">プロフィールページ表示テスト</p>
     <p>playerId: <?= playerId ?></p>
     <p>mode: <?= mode ?></p>
-    <p><a href="?mode=<?= mode ?>">← 戻る</a></p>
+    <p><a href="<?= baseUrl ?>?mode=<?= mode ?>" target="_top">← 戻る</a></p>
     <div id="playerDetail">読み込み中...</div>
     <div id="recordList">記録読み込み中...</div>
   </main>
@@ -245,6 +245,7 @@
     // グローバル変数
     const APP_MODE = '<?= mode ?>';
     const INITIAL_PLAYER_ID = '<?= playerId ?>';
+    const BASE_URL = '<?= baseUrl ?>';
     let currentPlayerId = INITIAL_PLAYER_ID || null;
     let playersData = [];
     let recordChart = null;
@@ -253,6 +254,7 @@
     console.log('[グローバル] スクリプト開始');
     console.log('[グローバル] APP_MODE:', APP_MODE);
     console.log('[グローバル] INITIAL_PLAYER_ID:', INITIAL_PLAYER_ID);
+    console.log('[グローバル] BASE_URL:', BASE_URL);
   </script>
   <?!= include('javascript'); ?>
 </body>

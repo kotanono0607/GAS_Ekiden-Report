@@ -1445,6 +1445,8 @@ function doGet(e) {
   template.mode = mode;
   // 注意: 'id'パラメータはGASが内部で使用するため、'pid'を使用
   template.playerId = params.pid || '';
+  // WebアプリのベースURLを渡す
+  template.baseUrl = ScriptApp.getService().getUrl();
 
   return template.evaluate()
     .setTitle('縦断駅伝選手名簿管理システム')
