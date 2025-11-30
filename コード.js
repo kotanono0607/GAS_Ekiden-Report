@@ -460,7 +460,7 @@ function debugTest5() {
     // Date型を文字列に変換
     const safeRow = row.map(cell => {
       if (cell instanceof Date) {
-        return cell.toISOString();
+        return serializeDateValue(cell);
       }
       return cell;
     });
@@ -513,7 +513,7 @@ function getPlayers(options = {}) {
         let value = row[index];
         // Date型を文字列に変換（google.script.runでシリアライズ可能にする）
         if (value instanceof Date) {
-          value = value.toISOString();
+          value = serializeDateValue(value);
         }
         player[header] = value;
       });
@@ -589,7 +589,7 @@ function getPlayerDetail(playerId) {
   headers.forEach((header, index) => {
     let value = row[index];
     if (value instanceof Date) {
-      value = value.toISOString();
+      value = serializeDateValue(value);
     }
     player[header] = value;
   });
@@ -676,7 +676,7 @@ function getPlayerRecords(playerId, options = {}) {
       headers.forEach((header, index) => {
         let value = row[index];
         if (value instanceof Date) {
-          value = value.toISOString();
+          value = serializeDateValue(value);
         }
         record[header] = value;
       });
@@ -778,7 +778,7 @@ function getTeamRecords(options = {}) {
     headers.forEach((header, index) => {
       let value = row[index];
       if (value instanceof Date) {
-        value = value.toISOString();
+        value = serializeDateValue(value);
       }
       record[header] = value;
     });
@@ -1411,6 +1411,35 @@ function formatDate(date) {
   const day = String(d.getDate()).padStart(2, '0');
 
   return `${year}/${month}/${day}`;
+}
+
+/**
+ * スプレッドシートのDate値を適切な文字列に変換
+ * Google Sheetsでは時間のみのセルは1899-12-30を基準日とするため、
+ * それを検出して適切にフォーマットする
+ * @param {Date} value - Date値
+ * @returns {string} 変換後の文字列
+ */
+function serializeDateValue(value) {
+  if (!(value instanceof Date)) return value;
+
+  const year = value.getFullYear();
+
+  // 1899年または1900年の場合は時間のみの値と判断
+  if (year === 1899 || year === 1900) {
+    // 時間のみをフォーマット (HH:MM:SS または HH:MM)
+    const hours = String(value.getHours()).padStart(2, '0');
+    const minutes = String(value.getMinutes()).padStart(2, '0');
+    const seconds = value.getSeconds();
+
+    if (seconds > 0) {
+      return `${hours}:${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
+    return `${hours}:${minutes}`;
+  }
+
+  // 通常の日付の場合はISO形式の日付部分のみ
+  return value.toISOString().split('T')[0];
 }
 
 // ===========================================
