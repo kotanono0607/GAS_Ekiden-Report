@@ -1,4 +1,6 @@
 """Google Spreadsheets接続モジュール"""
+import os
+import json
 import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
@@ -14,11 +16,22 @@ SCOPES = [
 ]
 
 
+def get_credentials_info() -> dict:
+    """認証情報を取得（Hugging Face環境変数 or Streamlit Secrets）"""
+    # 1. 環境変数 GCP_KEY があれば使用（Hugging Face Spaces用）
+    gcp_key = os.environ.get("GCP_KEY")
+    if gcp_key:
+        return json.loads(gcp_key)
+
+    # 2. なければ st.secrets を使用（Streamlit Cloud / ローカル用）
+    return dict(st.secrets["gcp_service_account"])
+
+
 @st.cache_resource
 def get_client() -> gspread.Client:
     """認証済みgspreadクライアントを取得"""
     credentials = Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"],
+        get_credentials_info(),
         scopes=SCOPES
     )
     return gspread.authorize(credentials)
