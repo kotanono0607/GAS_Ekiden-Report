@@ -561,59 +561,309 @@ google.script.run
 
 ---
 
-## 8. デプロイメント仕様
+## 8. デプロイメント仕様（Google Cloud Run）
 
-### 8.1 GAS デプロイ
+### 8.1 アーキテクチャ概要
 
-#### appsscript.json 設定
-```json
-{
-  "timeZone": "Asia/Tokyo",
-  "dependencies": {},
-  "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8",
-  "webapp": {
-    "executeAs": "USER_DEPLOYING",
-    "access": "ANYONE_ANONYMOUS"
-  }
-}
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Google Cloud Platform                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌─────────────────┐    ┌─────────────────┐                      │
+│  │   Cloud Run     │    │  Secret Manager │                      │
+│  │   (Streamlit)   │◄───│  (GCP_KEY)      │                      │
+│  └────────┬────────┘    └─────────────────┘                      │
+│           │                                                       │
+│           │ Google Sheets API                                     │
+│           ▼                                                       │
+│  ┌─────────────────┐                                             │
+│  │ Google Sheets   │                                             │
+│  │ (データベース)   │                                             │
+│  └─────────────────┘                                             │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
+           │
+           │ HTTPS
+           ▼
+┌─────────────────┐
+│   ユーザー       │
+│   (ブラウザ)     │
+└─────────────────┘
 ```
 
-#### clasp 設定（.clasp.json）
-```json
-{
-  "scriptId": "スクリプトID",
-  "rootDir": "."
-}
+### 8.2 前提条件
+
+| 項目 | 要件 |
+|------|------|
+| GCPプロジェクト | 有効なプロジェクトID |
+| 課金 | Cloud Run、Sheets APIの課金有効化 |
+| gcloud CLI | インストール済み、認証済み |
+| Docker | ローカルビルド時に必要（オプション） |
+
+### 8.3 サービスアカウント設定
+
+#### 8.3.1 サービスアカウント作成
+
+```bash
+# プロジェクトIDを設定
+export PROJECT_ID="your-project-id"
+
+# サービスアカウント作成
+gcloud iam service-accounts create ekiden-app \
+  --display-name="Ekiden App Service Account" \
+  --project=$PROJECT_ID
+
+# サービスアカウントのメールアドレス
+export SA_EMAIL="ekiden-app@${PROJECT_ID}.iam.gserviceaccount.com"
 ```
 
-### 8.2 Cloud Run デプロイ
+#### 8.3.2 必要な権限
 
-#### Dockerfile
+| ロール | 用途 |
+|--------|------|
+| roles/run.invoker | Cloud Run呼び出し（公開時は不要） |
+
+#### 8.3.3 サービスアカウントキー生成
+
+```bash
+# キーファイル生成
+gcloud iam service-accounts keys create key.json \
+  --iam-account=$SA_EMAIL \
+  --project=$PROJECT_ID
+
+# キーの内容を環境変数用に整形（改行を除去）
+cat key.json | jq -c .
+```
+
+#### 8.3.4 Google Sheetsへの共有設定
+
+1. 対象のスプレッドシートを開く
+2. 「共有」ボタンをクリック
+3. サービスアカウントのメールアドレス（`ekiden-app@xxx.iam.gserviceaccount.com`）を追加
+4. 権限を「編集者」に設定
+
+### 8.4 Dockerfile
+
 ```dockerfile
-FROM python:3.9-slim
+# ベースイメージ
+FROM python:3.11-slim
+
+# 作業ディレクトリ
 WORKDIR /app
-COPY streamlit_app/requirements.txt .
+
+# システム依存パッケージ（必要に応じて追加）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python依存パッケージをインストール
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY streamlit_app/ .
+
+# アプリケーションをコピー
+COPY . .
+
+# Cloud Run用ポート設定
 EXPOSE 8080
+
+# Streamlit設定
 ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
+ENV STREAMLIT_SERVER_PORT=8080
 ENV STREAMLIT_SERVER_HEADLESS=true
-CMD streamlit run app.py --server.port=${PORT:-8080} --server.address=0.0.0.0
+ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+
+# ヘルスチェック
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/_stcore/health || exit 1
+
+# 起動コマンド
+CMD ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0"]
 ```
 
-#### 環境変数
-| 変数名 | 説明 | 必須 |
-|--------|------|------|
-| GCP_KEY | サービスアカウントJSON | ○ |
-| PORT | ポート番号（Cloud Run自動設定） | - |
+### 8.5 requirements.txt
 
-### 8.3 Hugging Face Spaces デプロイ
+```
+streamlit>=1.28.0
+gspread>=5.12.0
+google-auth>=2.23.0
+pandas>=2.0.0
+plotly>=5.18.0
+```
 
-#### 環境変数
+### 8.6 環境変数
+
+| 変数名 | 説明 | 必須 | 設定方法 |
+|--------|------|------|---------|
+| GCP_KEY | サービスアカウントJSON（1行形式） | ○ | Secret Manager推奨 |
+| PORT | ポート番号 | - | Cloud Run自動設定（8080） |
+| SPREADSHEET_ID | スプレッドシートID | ○ | 環境変数 or コード内定数 |
+
+### 8.7 Cloud Runデプロイ手順
+
+#### 8.7.1 Secret Managerでシークレット作成（推奨）
+
+```bash
+# シークレット作成
+gcloud secrets create gcp-key \
+  --replication-policy="automatic" \
+  --project=$PROJECT_ID
+
+# シークレットにキーを追加
+gcloud secrets versions add gcp-key \
+  --data-file=key.json \
+  --project=$PROJECT_ID
+
+# Cloud Runサービスアカウントにアクセス権付与
+gcloud secrets add-iam-policy-binding gcp-key \
+  --member="serviceAccount:${PROJECT_ID}@appspot.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" \
+  --project=$PROJECT_ID
 ```
-GCP_KEY={"type":"service_account",...}
+
+#### 8.7.2 ソースからデプロイ（推奨）
+
+```bash
+# Cloud Runにデプロイ（ソースから自動ビルド）
+gcloud run deploy ekiden-app \
+  --source . \
+  --region asia-northeast1 \
+  --platform managed \
+  --allow-unauthenticated \
+  --set-secrets="GCP_KEY=gcp-key:latest" \
+  --memory 512Mi \
+  --cpu 1 \
+  --min-instances 0 \
+  --max-instances 10 \
+  --timeout 300 \
+  --project=$PROJECT_ID
 ```
+
+#### 8.7.3 Dockerイメージからデプロイ（代替）
+
+```bash
+# Artifact Registryにリポジトリ作成
+gcloud artifacts repositories create ekiden-repo \
+  --repository-format=docker \
+  --location=asia-northeast1 \
+  --project=$PROJECT_ID
+
+# イメージをビルド・プッシュ
+export IMAGE="asia-northeast1-docker.pkg.dev/${PROJECT_ID}/ekiden-repo/ekiden-app:latest"
+
+gcloud builds submit --tag $IMAGE --project=$PROJECT_ID
+
+# Cloud Runにデプロイ
+gcloud run deploy ekiden-app \
+  --image $IMAGE \
+  --region asia-northeast1 \
+  --platform managed \
+  --allow-unauthenticated \
+  --set-secrets="GCP_KEY=gcp-key:latest" \
+  --memory 512Mi \
+  --project=$PROJECT_ID
+```
+
+### 8.8 Cloud Run設定詳細
+
+| 設定項目 | 推奨値 | 説明 |
+|---------|--------|------|
+| リージョン | asia-northeast1 | 東京リージョン |
+| メモリ | 512Mi〜1Gi | Streamlitの負荷に応じて調整 |
+| CPU | 1 | 通常用途では十分 |
+| 最小インスタンス | 0 | コスト最適化（コールドスタートあり） |
+| 最大インスタンス | 10 | 負荷に応じてスケール |
+| タイムアウト | 300秒 | 長時間処理に対応 |
+| 同時実行数 | 80 | デフォルト |
+
+### 8.9 CI/CD設定（GitHub Actions）
+
+#### .github/workflows/deploy.yml
+
+```yaml
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  SERVICE_NAME: ekiden-app
+  REGION: asia-northeast1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy $SERVICE_NAME \
+            --source . \
+            --region $REGION \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-secrets="GCP_KEY=gcp-key:latest"
+```
+
+### 8.10 モニタリング・ログ
+
+#### Cloud Loggingでログ確認
+
+```bash
+# 最新のログを表示
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=ekiden-app" \
+  --limit 50 \
+  --project=$PROJECT_ID
+```
+
+#### Cloud Monitoringアラート設定（推奨）
+
+| メトリクス | 閾値 | 説明 |
+|-----------|------|------|
+| request_latencies | > 5秒 | レスポンス遅延 |
+| request_count（5xx） | > 10/分 | サーバーエラー急増 |
+| instance_count | > 8 | スケールアウト警告 |
+
+### 8.11 コスト見積もり
+
+| 項目 | 無料枠 | 超過時の料金目安 |
+|------|--------|-----------------|
+| Cloud Run | 200万リクエスト/月 | $0.40/100万リクエスト |
+| Cloud Run CPU | 180,000 vCPU秒/月 | $0.00002400/vCPU秒 |
+| Cloud Run メモリ | 360,000 GiB秒/月 | $0.00000250/GiB秒 |
+| Secret Manager | 6アクティブシークレット | $0.06/シークレット/月 |
+| Sheets API | 500リクエスト/100秒 | 無料（クォータ制限のみ） |
+
+※ 小規模チーム利用であれば無料枠内で収まる可能性が高い
+
+### 8.12 トラブルシューティング
+
+| 問題 | 原因 | 解決策 |
+|------|------|--------|
+| 503 Service Unavailable | コンテナ起動失敗 | ログ確認、メモリ増量 |
+| 認証エラー | GCP_KEY設定ミス | Secret Manager確認、JSON形式確認 |
+| スプレッドシートアクセス拒否 | 共有設定漏れ | サービスアカウントに編集権限付与 |
+| タイムアウト | 処理時間超過 | タイムアウト設定延長、処理最適化 |
+| コールドスタート遅延 | min-instances=0 | min-instances=1に設定（コスト増） |
 
 ---
 
@@ -621,25 +871,84 @@ GCP_KEY={"type":"service_account",...}
 
 ### 9.1 認証・認可
 
-| 項目 | 仕様 |
-|------|------|
-| GAS Web App | ANYONE_ANONYMOUS（URLを知っている人がアクセス可能） |
-| Streamlit | 環境変数またはSecretsによるサービスアカウント認証 |
-| スプレッドシート | サービスアカウントに編集権限を付与 |
+| レイヤー | 認証方式 | 説明 |
+|---------|---------|------|
+| Cloud Run | 公開（allow-unauthenticated） | URLを知っている人がアクセス可能 |
+| Google Sheets API | サービスアカウント認証 | OAuth 2.0 サービスアカウントキー |
+| アプリ内 | なし（将来拡張可能） | Streamlit Authenticator等で追加可能 |
 
-### 9.2 データ保護
+### 9.2 シークレット管理
+
+| 方式 | セキュリティ | 推奨度 |
+|------|------------|--------|
+| Secret Manager | 高（暗号化、アクセス制御、監査ログ） | ◎ 推奨 |
+| 環境変数（直接設定） | 中（デプロイ時に表示される可能性） | △ 開発用 |
+| コード内ハードコード | 低（GitHubに公開されるリスク） | × 禁止 |
+
+### 9.3 ネットワークセキュリティ
+
+| 項目 | 設定 |
+|------|------|
+| HTTPS | Cloud Runが自動でTLS終端 |
+| カスタムドメイン | Cloud Run + Cloud Load Balancing |
+| IP制限 | Cloud Armor（オプション） |
+
+### 9.4 データ保護
 
 | 項目 | 対策 |
 |------|------|
 | 論理削除 | 物理削除ではなくis_deletedフラグで管理 |
-| 入力検証 | 必須項目チェック、重複チェック |
-| XSS対策 | テンプレートエンジンによるエスケープ |
+| 入力検証 | 必須項目チェック、重複チェック、形式検証 |
+| XSS対策 | Streamlitの自動エスケープ |
+| SQLインジェクション | 該当なし（スプレッドシート使用） |
 
-### 9.3 OAuth スコープ
+### 9.5 Google Sheets API スコープ
 
 最小限のスコープのみを使用:
-- `spreadsheets`: スプレッドシートの読み書き
-- `script.container.ui`: GAS UIアクセス
+
+```python
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",  # スプレッドシートの読み書き
+]
+```
+
+### 9.6 アクセス制限オプション（将来拡張）
+
+#### Streamlit Authenticatorによるログイン機能
+
+```python
+import streamlit_authenticator as stauth
+
+# ユーザー認証設定
+authenticator = stauth.Authenticate(
+    credentials,
+    "ekiden_app",
+    "secret_key",
+    cookie_expiry_days=30
+)
+
+name, authentication_status, username = authenticator.login()
+
+if authentication_status:
+    st.write(f"Welcome {name}")
+elif authentication_status == False:
+    st.error("ユーザー名/パスワードが正しくありません")
+```
+
+#### Cloud IAMによるアクセス制限
+
+```bash
+# 認証必須に変更
+gcloud run services update ekiden-app \
+  --no-allow-unauthenticated \
+  --region asia-northeast1
+
+# 特定ユーザーにアクセス権付与
+gcloud run services add-iam-policy-binding ekiden-app \
+  --member="user:user@example.com" \
+  --role="roles/run.invoker" \
+  --region asia-northeast1
+```
 
 ---
 
