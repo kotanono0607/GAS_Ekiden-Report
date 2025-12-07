@@ -70,11 +70,21 @@ st.markdown("""
 
 # 接続テスト（デバッグ用）
 if st.checkbox("接続テスト"):
+    import os
+
+    # 認証方法の確認
+    gcp_key = os.environ.get("GCP_KEY")
+    if gcp_key:
+        st.info(f"✅ GCP_KEY 環境変数: 設定済み ({len(gcp_key)} 文字)")
+    else:
+        st.warning("❌ GCP_KEY 環境変数: 未設定")
+
     try:
         from utils.sheets import get_players
         df = get_players()
         st.success(f"スプレッドシート接続成功: {len(df)}名の選手データ")
         st.dataframe(df.head())
     except Exception as e:
-        st.error(f"接続エラー: {e}")
-        st.info("Secretsにgcp_service_accountが設定されているか確認してください")
+        st.error(f"接続エラー: {type(e).__name__}: {e}")
+        st.code(str(e))
+        st.info("GCP_KEY が正しいJSON形式か確認してください")
