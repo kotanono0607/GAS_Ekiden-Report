@@ -17,10 +17,15 @@ st.markdown("""
     header {visibility: hidden;}
     /* ハンバーガーメニュー非表示 */
     #MainMenu {visibility: hidden;}
+    /* 王冠アイコン（デコレーション）非表示 */
+    .stDecoration {display: none;}
+    [data-testid="stDecoration"] {display: none;}
+    /* ツールバー非表示 */
+    [data-testid="stToolbar"] {display: none;}
 </style>
 """, unsafe_allow_html=True)
 
-st.title("駅伝チーム管理システム v0.1")
+st.title("駅伝チーム管理システム v0.2")
 
 st.markdown("""
 このシステムでは以下の機能を利用できます：
