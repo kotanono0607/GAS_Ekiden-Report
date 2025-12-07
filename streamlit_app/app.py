@@ -8,28 +8,33 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ブランディング非表示CSS（モバイル対応強化版）
+# --- v0.5 CSS修正: ワイルドカードと属性セレクタで全方位から消す ---
 st.markdown("""
 <style>
-    /* 1. ヘッダー、フッター、ハンバーガーメニューを消す */
+    /* 1. 基本的なバーとメニューの非表示 */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* 2. モバイル画面右下の「Hosted with Streamlit」バッジ（赤いボタン）を消す */
-    .viewerBadge_container__1QSob {display: none !important;}
-    .styles_viewerBadge__1yB5_ {display: none !important;}
-    .viewerBadge_link__1S137 {display: none !important;}
-    .viewerBadge_text__1JaDK {display: none !important;}
-
-    /* 3. その他ツールバー関連を強制非表示 */
+    /* 2. [PC/モバイル共通] ツールバーとデコレーションを消す */
     [data-testid="stToolbar"] {visibility: hidden !important;}
     [data-testid="stDecoration"] {visibility: hidden !important;}
     [data-testid="stStatusWidget"] {visibility: hidden !important;}
+
+    /* 3. [モバイル専用] 右下の赤いボタン (Viewer Badge / Hosted with Streamlit) を消す */
+    /* "viewerBadge" という文字が含まれるクラスを持つ要素をすべて消す（強力版） */
+    div[class^="viewerBadge"] {display: none !important;}
+    div[class*="viewerBadge"] {display: none !important;}
+
+    /* 4. [開発者用] 右下の「Manage app」ボタン対策 */
+    /* ボタンの kind 属性や特定のクラスをターゲットにして消す */
+    button[kind="header"] {display: none !important;}
+    div[data-testid="stMobileUserControl"] {display: none !important;}
+    .stAppDeployButton {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
-st.title("駅伝チーム管理システム v0.3")
+st.title("駅伝チーム管理システム v0.5")
 
 st.markdown("""
 このシステムでは以下の機能を利用できます：
