@@ -8,24 +8,28 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ブランディング非表示CSS
+# ブランディング非表示CSS（モバイル対応強化版）
 st.markdown("""
 <style>
-    /* フッター非表示 */
-    footer {visibility: hidden;}
-    /* ヘッダー非表示 */
-    header {visibility: hidden;}
-    /* ハンバーガーメニュー非表示 */
+    /* 1. ヘッダー、フッター、ハンバーガーメニューを消す */
     #MainMenu {visibility: hidden;}
-    /* 王冠アイコン（デコレーション）非表示 */
-    .stDecoration {display: none;}
-    [data-testid="stDecoration"] {display: none;}
-    /* ツールバー非表示 */
-    [data-testid="stToolbar"] {display: none;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* 2. モバイル画面右下の「Hosted with Streamlit」バッジ（赤いボタン）を消す */
+    .viewerBadge_container__1QSob {display: none !important;}
+    .styles_viewerBadge__1yB5_ {display: none !important;}
+    .viewerBadge_link__1S137 {display: none !important;}
+    .viewerBadge_text__1JaDK {display: none !important;}
+
+    /* 3. その他ツールバー関連を強制非表示 */
+    [data-testid="stToolbar"] {visibility: hidden !important;}
+    [data-testid="stDecoration"] {visibility: hidden !important;}
+    [data-testid="stStatusWidget"] {visibility: hidden !important;}
 </style>
 """, unsafe_allow_html=True)
 
-st.title("駅伝チーム管理システム v0.2")
+st.title("駅伝チーム管理システム v0.3")
 
 st.markdown("""
 このシステムでは以下の機能を利用できます：
