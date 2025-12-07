@@ -1,0 +1,28 @@
+# Streamlit secrets (認証情報)
+streamlit_app/.streamlit/secrets.toml
+.streamlit/secrets.toml
+
+# サービスアカウントキー
+*.json
+!appsscript.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+.env
+.venv
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
