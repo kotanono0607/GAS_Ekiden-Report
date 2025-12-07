@@ -8,6 +8,18 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ブランディング非表示CSS
+st.markdown("""
+<style>
+    /* フッター非表示 */
+    footer {visibility: hidden;}
+    /* ヘッダー非表示 */
+    header {visibility: hidden;}
+    /* ハンバーガーメニュー非表示 */
+    #MainMenu {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
+
 st.title("駅伝チーム管理システム")
 
 st.markdown("""

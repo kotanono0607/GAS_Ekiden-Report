@@ -8,12 +8,15 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from utils.sheets import get_players
+from utils.style import hide_streamlit_branding
 
 st.set_page_config(
     page_title="選手一覧 - 駅伝チーム管理",
     page_icon="🏃",
     layout="wide",
 )
+
+hide_streamlit_branding()
 
 st.title("選手一覧")
 

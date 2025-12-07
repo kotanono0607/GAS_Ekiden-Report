@@ -14,12 +14,15 @@ from utils.sheets import (
     calculate_best_records,
     time_to_seconds,
 )
+from utils.style import hide_streamlit_branding
 
 st.set_page_config(
     page_title="選手詳細 - 駅伝チーム管理",
     page_icon="🏃",
     layout="wide",
 )
+
+hide_streamlit_branding()
 
 # 選手選択
 player_id = st.session_state.get("selected_player_id")
