@@ -9,12 +9,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # アプリケーションをコピー
 COPY streamlit_app/ .
 
-# Hugging Face Spaces用ポート
-EXPOSE 7860
+# Cloud Run用ポート（環境変数PORTを使用、デフォルト8080）
+EXPOSE 8080
 
 # Streamlit設定
-ENV STREAMLIT_SERVER_PORT=7860
 ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
+ENV STREAMLIT_SERVER_HEADLESS=true
 
-# 起動コマンド
-CMD ["streamlit", "run", "app.py", "--server.port=7860", "--server.address=0.0.0.0"]
+# 起動コマンド（Cloud RunのPORT環境変数を使用）
+CMD streamlit run app.py --server.port=${PORT:-8080} --server.address=0.0.0.0
