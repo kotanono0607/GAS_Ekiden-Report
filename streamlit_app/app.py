@@ -20,7 +20,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("駅伝チーム管理システム")
+st.title("駅伝チーム管理システム v0.1")
 
 st.markdown("""
 このシステムでは以下の機能を利用できます：
